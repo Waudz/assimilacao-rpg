@@ -75,6 +75,10 @@ export class SyncEngine {
     try {
       do {
         this.rerun = false;
+        // Recomeça a vinculação pendente mesmo se o jogador reabrir na Home,
+        // sem depender de manter a ficha aberta. O destino foi fixado na conclusão.
+        const pending = getPendingTable();
+        if (pending?.characterId) await this.applyPendingTable(pending.characterId);
         const metas = await db.sync.filter((m) => m.dirty && Boolean(m.tableId) && m.state !== 'conflict').toArray();
         for (const m of metas) await this.pushOne(m.id);
       } while (this.rerun);
@@ -151,7 +155,7 @@ export class SyncEngine {
    */
   async applyPendingTable(characterId: string): Promise<{ status: 'none' | 'waiting' | 'joined' | 'failed'; tableName?: string; error?: string }> {
     const pending = getPendingTable();
-    if (!pending) return { status: 'none' };
+    if (!pending || (pending.characterId && pending.characterId !== characterId)) return { status: 'none' };
     const meta = await getSyncMeta(characterId);
     if (meta.tableId) {
       clearPendingTable();
