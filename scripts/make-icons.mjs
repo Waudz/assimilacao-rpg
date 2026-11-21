@@ -12,7 +12,7 @@ const out = [
 for (const [file, size, pad] of out) {
   const inner = Math.round(size * (1 - pad * 2));
   const icon = await sharp(svg, { density: 384 }).resize(inner, inner).png().toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 4, background: '#f3eddf' } })
+  await sharp({ create: { width: size, height: size, channels: 4, background: '#24212a' } })
     .composite([{ input: icon, gravity: 'centre' }])
     .png()
     .toFile(file);
