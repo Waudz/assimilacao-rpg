@@ -30,9 +30,7 @@ export async function createCharacter(page: Page) {
   await page.getByLabel('Propósito Pessoal 2').fill('Entender o que fez o mundo ficar assim.');
   await page.getByLabel('Propósito Coletivo').fill('Mapear toda a região');
   await page.getByRole('button', { name: 'Próximo' }).click();
-  // 5 Aptidões — validação: não avança sem distribuir
-  await page.getByRole('button', { name: 'Próximo' }).click();
-  await expect(page.getByRole('alert')).toContainText('Instintos');
+  // 5 Aptidões — escolhas podem ser feitas agora ou mais tarde; validação ocorre na conclusão.
   await noHorizontalScroll(page);
   await inc(page, 'Potência', 2);
   await inc(page, 'Resolução', 1);
