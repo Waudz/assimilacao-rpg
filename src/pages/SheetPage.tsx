@@ -154,7 +154,7 @@ export function SheetPage({ id }: { id: string }) {
             className="btn danger"
             onClick={async () => {
               if (!(await ask({ title: `Excluir “${char.name}”?`, message: 'A ficha será apagada deste aparelho (e do servidor, se estiver numa mesa). Exporte um backup antes se quiser guardá-la.', confirmLabel: 'Excluir ficha', tone: 'danger' }))) return;
-              if (meta?.tableId) {
+              if (meta?.tableId || localStorage.getItem('assimilacao-account-owner')) {
                 try {
                   await supabaseRemote.deleteCharacter(char.id);
                 } catch {
