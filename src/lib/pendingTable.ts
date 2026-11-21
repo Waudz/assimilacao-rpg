@@ -6,6 +6,8 @@ export interface PendingTable {
   code: string;
   /** Quando o código foi validado no servidor. */
   validatedAt: number;
+  /** Ficha concluída que deve entrar na mesa, mesmo após reiniciar o aplicativo. */
+  characterId?: string;
 }
 
 export const CODE_PATTERN = /^[A-HJ-NP-Z2-9]{8}$/;
@@ -37,5 +39,17 @@ export function clearPendingTable(): void {
     window.dispatchEvent(new Event('pending-table'));
   } catch {
     /* ignore */
+  }
+}
+
+/** Associa a mesa pendente a uma ficha específica antes da tentativa de envio. */
+export function bindPendingTable(characterId: string): void {
+  const pending = getPendingTable();
+  if (!pending || pending.characterId) return;
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ ...pending, characterId } satisfies PendingTable));
+    window.dispatchEvent(new Event('pending-table'));
+  } catch {
+    /* sem armazenamento persistente */
   }
 }
