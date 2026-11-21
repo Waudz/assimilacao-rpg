@@ -118,9 +118,9 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
       <Header
         title="INFECTADO"
         right={
-          <Button size="small" icon="swap" onClick={onSwitchRole} aria-label="Trocar papel">
-            <span className="hide-sm">Trocar papel</span>
-          </Button>
+          <button type="button" className="header-tool" onClick={onSwitchRole} aria-label="Trocar papel"><Icon name="swap" />
+            <span>Trocar papel</span>
+          </button>
         }
       />
       <Page>
