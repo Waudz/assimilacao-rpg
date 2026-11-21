@@ -57,6 +57,10 @@ export async function syncAccount(push: (id: string) => Promise<unknown>) {
     const meta = await getSyncMeta(local.id);
     if (!remoteIds.has(local.id) || meta.dirty) {
       if (meta.state === 'conflict') continue;
+      if (!remoteIds.has(local.id) && meta.baseRev > 0 && !local.recoverySecret) {
+        await patchSyncMeta(local.id, { state: 'error', error: 'Esta ficha pertence a outra sessão. Recupere a propriedade antes de sincronizar.' });
+        continue;
+      }
       if (!remoteIds.has(local.id) && meta.baseRev > 0 && local.recoverySecret) {
         // Ficha criada numa sessão anônima: transfere a posse usando seu segredo.
         const claimed = await supabaseRemote.claim(local.id, local.recoverySecret);
