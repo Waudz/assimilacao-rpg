@@ -111,3 +111,31 @@ describe('cliente Supabase usa exclusivamente o schema assimilacao', () => {
     await expect(m.supabaseRemote.listTables()).rejects.toThrow('not_configured');
   });
 });
+
+describe('regressão: login anônimo único com chamadas simultâneas', () => {
+  it('várias chamadas em paralelo fazem UM signInAnonymously', async () => {
+    vi.resetModules();
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key');
+    const sign = vi.fn(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+      return { error: null };
+    });
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: () => {
+        const chain: Record<string, unknown> = {};
+        for (const m of ['select', 'eq', 'order']) chain[m] = () => chain;
+        (chain as { then: unknown }).then = (res: (v: unknown) => void) => res({ data: [], error: null });
+        return {
+          auth: { getSession: async () => ({ data: { session: null } }), signInAnonymously: sign },
+          rpc: async () => ({ data: { ok: true }, error: null }),
+          from: () => chain,
+        };
+      },
+    }));
+    const { supabaseRemote } = await import('../src/lib/sync/remote');
+    await Promise.all([supabaseRemote.listTables(), supabaseRemote.createTable('x'), supabaseRemote.listTables()]);
+    expect(sign).toHaveBeenCalledTimes(1);
+    vi.doUnmock('@supabase/supabase-js');
+  });
+});

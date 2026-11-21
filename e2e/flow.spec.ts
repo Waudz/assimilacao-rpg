@@ -25,27 +25,27 @@ test('cria personagem, joga, fecha e reabre sem perder a ficha', async ({ page }
   await expect(page.getByRole('heading', { name: 'Joaquin Jardim' })).toBeVisible();
   await expect(page.getByText(/Nível 5/).first()).toBeVisible();
   await expect(page.getByLabel('Determinação: 8 pontos de 9')).toBeVisible();
-  await page.goto('/#/');
+  await page.goto('./#/');
   await expect(page.getByRole('button', { name: /Joaquin Jardim/ })).toBeVisible();
 });
 
 test('criação em andamento pode ser retomada', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: /Infectado/ }).click();
   await page.getByRole('button', { name: '+ Novo Infectado' }).click();
   await page.getByLabel('Nome', { exact: true }).fill('Rascunho');
   await page.getByRole('button', { name: 'Próximo' }).click();
   await page.waitForTimeout(500);
   await page.reload();
-  await page.goto('/#/');
+  await page.goto('./#/');
   await page.getByRole('button', { name: /Rascunho/ }).click();
   await expect(page.getByRole('heading', { name: 'Origens' })).toBeVisible();
 });
 
 test('tradutor de dados converte faces e soma mantidos', async ({ page }) => {
-  await page.goto('/#/dice');
+  await page.goto('./#/dice');
   await page.getByRole('button', { name: /Infectado/ }).click().catch(() => undefined);
-  await page.goto('/#/dice');
+  await page.goto('./#/dice');
   await page.getByRole('button', { name: 'D12' }).click();
   await page.getByRole('button', { name: 'Adicionar D12 face 11' }).click();
   await page.getByRole('button', { name: 'D10' }).click();
@@ -60,17 +60,17 @@ test('tradutor de dados converte faces e soma mantidos', async ({ page }) => {
 });
 
 test('páginas principais não têm rolagem horizontal', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: /Infectado/ }).click();
   for (const hash of ['/', '/dice', '/rules', '/backup']) {
-    await page.goto(`/#${hash}`);
+    await page.goto(`./#${hash}`);
     await page.waitForTimeout(150);
     await noHorizontalScroll(page);
   }
 });
 
 test('Assimilador: tela de mesas coerente com a configuração do build', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: /Assimilador/ }).click();
   const create = page.getByRole('button', { name: /Criar mesa/ });
   await expect(create).toBeVisible();
@@ -81,7 +81,7 @@ test('Assimilador: tela de mesas coerente com a configuração do build', async 
 
 test('etapa de Aptidões cabe em tela de 320 px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: /Infectado/ }).click();
   await page.getByRole('button', { name: '+ Novo Infectado' }).click();
   await page.getByLabel('Nome', { exact: true }).fill('Estreito');
@@ -100,7 +100,7 @@ test('etapa de Aptidões cabe em tela de 320 px', async ({ page }) => {
 });
 
 test('depois de instalado, o app abre e funciona totalmente offline', async ({ page, context }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: /Infectado/ }).click();
   // aguarda o service worker assumir o controle (cache pré-carregado)
   await page.evaluate(async () => {
@@ -116,7 +116,7 @@ test('depois de instalado, o app abre e funciona totalmente offline', async ({ p
   await page.getByLabel('Nome', { exact: true }).fill('Offline');
   await page.getByRole('button', { name: 'Próximo' }).click();
   await page.waitForTimeout(500);
-  await page.goto('/#/');
+  await page.goto('./#/');
   await expect(page.getByRole('button', { name: /Offline/ })).toBeVisible();
   await context.setOffline(false);
 });

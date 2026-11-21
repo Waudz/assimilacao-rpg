@@ -8,7 +8,7 @@ export async function noHorizontalScroll(page: Page) {
 }
 
 export async function createCharacter(page: Page) {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: /Infectado/ }).click();
   await page.getByRole('button', { name: '+ Novo Infectado' }).click();
 

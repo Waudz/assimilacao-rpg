@@ -31,3 +31,10 @@ Observação: sem Realtime habilitado na publicação, as atualizações chegam 
 - **Aparelhos reais** (Safari/iPhone, Chrome/Android): instalação na tela inicial, modo standalone e reabertura. Testes acima usam Chromium emulando as telas.
 - **Realtime** (publicação não habilitada nesta validação).
 - Efeitos no Rastreador D&D: nenhum objeto dele foi tocado; a preservação foi verificada em banco simulado e a migration é aditiva.
+
+## Publicação (GitHub Pages) — verificação de 2026-11-21
+- Workflow da `main` (`e38dfa7`): job `test` **passou**; job `deploy` **falhou** com `Failed to create deployment (status: 404) ... Ensure GitHub Pages has been enabled`. Causa: o Pages não estava habilitado no repositório (a API de Pages também respondia 404). Não é erro de código.
+- **Ação do proprietário:** *Settings → Pages → Build and deployment → Source: **GitHub Actions***, depois *Actions → CI e publicação → Re-run all jobs* (ou um novo push na `main`). Habilitar o Pages exige permissão de administrador do repositório.
+- Validação equivalente feita localmente: o build de produção (`dist/`) servido em **`/assimilacao-rpg/`** (mesmo subcaminho do Pages, `scripts/serve-subpath.mjs`) com `PW_BASE_URL`:
+  manifest, ícones (192/512/maskable/apple-touch), `sw.js` e `registerSW.js` respondem 200; `start_url`/`scope` relativos; 16 testes E2E + o fluxo real com Supabase (2 execuções por dispositivo) **passaram** nesse subcaminho.
+- Corrigidos nesta verificação (regressões em `tests/gm-home-race.test.tsx` e `tests/remote.test.ts`): (1) a lista de mesas carregada na abertura podia apagar uma mesa recém-criada ("Mesa não encontrada"); (2) chamadas simultâneas faziam dois logins anônimos, podendo trocar a identidade no meio.

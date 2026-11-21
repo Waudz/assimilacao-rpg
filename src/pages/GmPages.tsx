@@ -19,13 +19,20 @@ export function GmHome({ onSwitchRole }: { onSwitchRole: () => void }) {
   // Sincroniza a lista com o servidor quando possível.
   useEffect(() => {
     if (!syncConfigured || !online) return;
-    void supabaseRemote
-      .listTables()
-      .then(async (srv) => {
-        const local = await db.gmTables.toArray();
-        await db.gmTables.bulkPut(srv.map((t) => ({ ...t, recoveryKey: local.find((l) => l.id === t.id)?.recoveryKey })));
+    // Só considera "removidas" as mesas que já existiam localmente ANTES da consulta: uma mesa criada
+    // enquanto a lista carrega não pode ser apagada por uma resposta que ainda não a conhecia.
+    void db.gmTables
+      .toArray()
+      .then(async (before) => {
+        const srv = await supabaseRemote.listTables();
         const keep = new Set(srv.map((t) => t.id));
-        await db.gmTables.bulkDelete(local.filter((l) => !keep.has(l.id)).map((l) => l.id));
+        await db.transaction('rw', db.gmTables, async () => {
+          for (const t of srv) {
+            const cur = await db.gmTables.get(t.id);
+            await db.gmTables.put({ ...t, recoveryKey: cur?.recoveryKey });
+          }
+          await db.gmTables.bulkDelete(before.filter((l) => !keep.has(l.id)).map((l) => l.id));
+        });
       })
       .catch(() => undefined);
   }, [online]);
