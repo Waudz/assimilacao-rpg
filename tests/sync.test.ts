@@ -3,7 +3,7 @@ import { buildBackup, importCharacters, parseBackup } from '../src/lib/backup';
 import { db, deleteCharacter, getCharacter, getSyncMeta, saveCharacter } from '../src/lib/db';
 import { applyDamage, newCharacter, type Character } from '../src/lib/rules';
 import { SyncEngine, syncLabel } from '../src/lib/sync/engine';
-import { clearPendingTable, getPendingTable, setPendingTable } from '../src/lib/pendingTable';
+import { bindPendingTable, clearPendingTable, getPendingTable, setPendingTable } from '../src/lib/pendingTable';
 import type { JoinResult, PushResult, Remote, ServerCharacterRow, ServerTable } from '../src/lib/sync/remote';
 
 /** Servidor em memória com as mesmas regras de permissão do backend SQL (testadas à parte em rls.test.ts). */
@@ -403,5 +403,43 @@ describe('mesa antes da ficha (mesa pendente)', () => {
     await e.checkTableCode(t.code);
     setPendingTable(t.code);
     expect(await db.characters.count()).toBe(0);
+  });
+});
+
+
+describe('reconexão automática de mesa pendente após reabrir', () => {
+  beforeEach(() => clearPendingTable());
+
+  it('reenvia a ficha correta quando o app reinicia na Home', async () => {
+    const t = await new FakeRemote(server, 'gm').createTable('Mesa');
+    const first = await readyChar('Primeira');
+    const other = await readyChar('Outra');
+    setPendingTable(t.code);
+    bindPendingTable(first.id);
+    online = false;
+    const e = mk('player');
+    await e.syncAll();
+    expect(getPendingTable()?.characterId).toBe(first.id);
+    expect(server.chars.size).toBe(0);
+    online = true;
+    // Simula o próximo ciclo automático de sincronização após reabrir o app.
+    await mk('player').syncAll();
+    expect(getPendingTable()).toBeNull();
+    expect((await getSyncMeta(first.id)).tableId).toBe(t.id);
+    expect((await getSyncMeta(other.id)).tableId).toBeUndefined();
+  });
+
+  it('falha temporária mantém o código para o próximo ciclo', async () => {
+    const t = await new FakeRemote(server, 'gm').createTable('Mesa');
+    const c = await readyChar();
+    setPendingTable(t.code);
+    bindPendingTable(c.id);
+    server.failNext = new Error('Failed to fetch');
+    const e = mk('player');
+    await e.syncAll();
+    expect(getPendingTable()?.characterId).toBe(c.id);
+    await e.syncAll();
+    expect(getPendingTable()).toBeNull();
+    expect((await getSyncMeta(c.id)).tableId).toBe(t.id);
   });
 });
