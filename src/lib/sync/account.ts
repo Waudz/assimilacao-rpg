@@ -34,7 +34,7 @@ export async function syncAccount(push: (id: string) => Promise<unknown>) {
     await supabaseRemote.deleteCharacter(id);
     localStorage.setItem(DELETIONS, JSON.stringify(pendingDeletes.filter((x) => x !== id)));
   }
-  const rows = await supabaseRemote.listOwn();
+  const rows = await supabaseRemote.listOwn!();
   const remoteIds = new Set(rows.map((r) => r.id));
   for (const row of rows) {
     const local = await getCharacter(row.id);
