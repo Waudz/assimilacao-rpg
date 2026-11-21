@@ -10,7 +10,7 @@ export function Header({ title, backTo, right }: { title?: string; backTo?: stri
   const isSheet = path.startsWith('/sheet/');
   const openSheetSection = (id: string) => {
     const el = document.getElementById(id);
-    if (el instanceof HTMLDetailsElement) { el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    if (el instanceof HTMLDetailsElement) { el.open = true; el.querySelector('summary')?.focus(); }
   };
   return (
     <header className="app-header">
