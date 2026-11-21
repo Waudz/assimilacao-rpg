@@ -1,6 +1,7 @@
 import { AssimilacaoMark } from './BrandAssets';
 // Conjunto único de ícones (SVG inline, traço 1.75, 24×24). Sem biblioteca externa.
 const PATHS = {
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
   home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
   dice: 'M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2zM8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01',
   book: 'M4 5a2 2 0 012-2h13v15H6a2 2 0 00-2 2zM4 20a2 2 0 002 1h13v-3M9 7h6',

@@ -19,7 +19,18 @@ export function Header({ title, backTo, right }: { title?: string; backTo?: stri
         Assimilação
         <small>{title ?? 'FICHAS DIGITAIS'}</small>
       </div>
-      {right}
+      <nav className="header-actions" aria-label="Acesso rápido">
+        <button type="button" className="header-tool" aria-label="Tradutor de dados" title="Tradutor de dados" onClick={() => go('/dice')}><Icon name="dice" /><span>Dados</span></button>
+        <button type="button" className="header-tool" aria-label="Regras rápidas" title="Regras rápidas" onClick={() => go('/rules')}><Icon name="book" /><span>Regras</span></button>
+        <details className="header-more">
+          <summary className="header-tool" aria-label="Mais opções" title="Mais opções"><Icon name="more" /><span>Mais</span></summary>
+          <div className="header-menu">
+            <button type="button" onClick={() => go('/backup')}><Icon name="download" /> Backup e importação</button>
+            <button type="button" onClick={() => go('/')}><Icon name="home" /> Início</button>
+          </div>
+        </details>
+        {right}
+      </nav>
     </header>
   );
 }

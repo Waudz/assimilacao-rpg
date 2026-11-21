@@ -4,7 +4,6 @@ import { Icon } from '../components/Icon';
 import { Button, EmptyState, Field, Header, Loading, Notice, Page, SectionTitle, useConfirm } from '../components/ui';
 import { db, setRole, type GmTable } from '../lib/db';
 import { useLive, useOnline } from '../lib/hooks';
-import { ToolLinks } from './HomePage';
 import { go } from '../lib/router';
 import { assimilationAvailable, determinationAvailable, healthCurrent, healthMax, assimilationLevel } from '../lib/rules';
 import { engine, supabaseRemote, syncConfigured } from '../lib/sync';
@@ -110,8 +109,6 @@ export function GmHome({ onSwitchRole }: { onSwitchRole: () => void }) {
           </div>
         </details>
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
-        <SectionTitle icon="bag">Ferramentas</SectionTitle>
-        <ToolLinks hide={['/backup']} />
       </Page>
     </>
   );
