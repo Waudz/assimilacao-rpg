@@ -79,6 +79,29 @@ export function SheetView({ char, update }: { char: Character; update?: Update }
 
       {tab === 'Perfil' && (
         <div className="stack" {...panel('Perfil')}>
+          {!ro && (
+            <div className="card stack">
+              <h2>Editar dados do personagem</h2>
+              <label className="field">Nome
+                <input value={char.name} maxLength={80} onChange={(e) => update!({ name: e.target.value })} />
+              </label>
+              <label className="field">Evento Marcante
+                <input value={char.event} onChange={(e) => update!({ event: e.target.value })} />
+              </label>
+              <label className="field">Ocupação
+                <input value={char.occupation} onChange={(e) => update!({ occupation: e.target.value })} />
+              </label>
+              <label className="field">Geração
+                <select value={char.generation} onChange={(e) => update!({ generation: e.target.value as Character['generation'] })}>
+                  {GENERATIONS.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+                </select>
+              </label>
+              <label className="field">Idade (opcional)
+                <input inputMode="numeric" value={char.age} onChange={(e) => update!({ age: e.target.value.replace(/\\D/g, '').slice(0, 3) })} />
+              </label>
+              <p className="muted">As alterações são salvas automaticamente e sincronizadas com a mesa quando houver conexão.</p>
+            </div>
+          )}
           <div className="card">
             <h2>Origens</h2>
             <p>
