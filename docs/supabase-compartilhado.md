@@ -24,7 +24,7 @@ Responsável: quem audita o projeto (ChatGPT / proprietário). Tudo abaixo é **
 2. **Executar `supabase/migrations/20261121120000_assimilacao_schema.sql`** (aditiva). Conferir que nada novo apareceu fora de `assimilacao`.
 3. **Expor o schema na API:** *Project Settings → API → Exposed schemas* → **acrescentar** `assimilacao` (manter os atuais) — e **não** mexer em *Extra search path*. Isto recarrega a configuração do PostgREST (afeta a API do projeto inteiro, só acrescentando um schema).
 4. **Autenticação anônima** (*Authentication → Sign In / Providers → Allow anonymous sign-ins*): é **global**. Ver o risco abaixo.
-5. **Realtime (opcional):** `supabase/optional/realtime.sql` acrescenta `assimilacao.characters` à publicação compartilhada `supabase_realtime`. Sem isso, o Assimilador atualiza por consulta a cada 15 s.
+5. **Realtime (opcional):** `supabase/optional/realtime.sql` acrescenta `assimilacao.characters` à publicação compartilhada `supabase_realtime`. Sem isso, o Assimilador atualiza por consulta a cada 8 s.
 6. **Variáveis de ambiente do build:** `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` (chave anon/publishable; **nunca** `service_role`).
 
 ## ⚠️ Risco principal do projeto compartilhado: usuários anônimos são `authenticated`

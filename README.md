@@ -68,7 +68,7 @@ Sem as variáveis do Supabase o app roda normalmente, mas **criar/entrar em mesa
 2. Executar `supabase/migrations/20261121120000_assimilacao_schema.sql` (aditiva; só cria o schema `assimilacao`).
 3. *Project Settings → API → Exposed schemas*: **acrescentar** `assimilacao` (sem remover os atuais).
 4. Avaliar o login anônimo (*Authentication → Allow anonymous sign-ins*, **global**): usuários anônimos têm o role `authenticated`. **Só habilitar depois de conferir que nenhuma policy do Rastreador libera dados a qualquer `authenticated`** — ou usar um projeto Supabase separado (o código não muda, só as variáveis).
-5. Opcional: `supabase/optional/realtime.sql` (Realtime). Sem ele há consulta a cada 15 s.
+5. Opcional: `supabase/optional/realtime.sql` (Realtime). Sem ele há consulta a cada 8 s.
 6. Copiar *Project URL* e a chave **anon/publishable** (nunca `service_role`). Local: `.env.local` (modelo em `.env.example`). Publicação: variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` em *GitHub → Settings → Secrets and variables → Actions → Variables*.
 
 A chave anon é pública por desenho; quem protege os dados são as políticas RLS e as funções da migration (testadas em `tests/rls.test.ts` e `tests/isolation.test.ts`).
