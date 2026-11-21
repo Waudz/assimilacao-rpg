@@ -4,6 +4,7 @@ import { go } from '../lib/router';
 import { engine } from '../lib/sync';
 import { accountResetPassword, accountSession, accountSignIn, accountSignOut, accountSignUp, accountUpdatePassword, friendlyError } from '../lib/sync/remote';
 import { clearAccountLocal } from '../lib/sync/account';
+import { db, getSyncMeta } from '../lib/db';
 
 type Mode = 'login' | 'register' | 'reset' | 'password';
 export function AccountPage() {
@@ -41,6 +42,10 @@ export function AccountPage() {
   async function logout() {
     setBusy(true); setError('');
     try {
+      await engine.syncAll();
+      const chars = await db.characters.toArray();
+      const unsaved = await Promise.all(chars.map(async (c) => (await getSyncMeta(c.id)).state !== 'synced'));
+      if (unsaved.some(Boolean)) throw new Error('Há fichas sem cópia confirmada na nuvem. Conecte-se e aguarde a sincronização antes de sair.');
       engine.stop();
       await accountSignOut();
       await clearAccountLocal();
