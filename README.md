@@ -113,3 +113,8 @@ A chave anon é pública por desenho; quem protege os dados são as políticas R
 - `docs/supabase-compartilhado.md` — isolamento do Rastreador D&D, passos globais e riscos.
 - `docs/requisitos-assimilador.md` — decisões obrigatórias do Assimilador.
 - `docs/auditoria-referencias.md` — comparação com apps existentes (nenhum código foi copiado).
+
+
+## Contas por e-mail (em desenvolvimento)
+
+A tela **Minha conta** oferece cadastro, entrada, recuperação de senha e sincronização de fichas entre dispositivos, inclusive fora de mesas. As fichas continuam locais e funcionam offline; o envio é retomado com conexão. Não há migração de fichas anônimas antigas. Antes de publicar, validar os cenários de segurança e autenticação descritos em [docs/contas-email.md](docs/contas-email.md). A funcionalidade permanece em PR de desenvolvimento até essa validação.
