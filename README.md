@@ -94,14 +94,15 @@ A chave anon é pública por desenho; quem protege os dados são as políticas R
 *Início → Backup e importação.* O JSON contém todas as fichas (e o segredo de recuperação: trate como privado). O iPhone pode apagar dados de sites sem uso — faça backups periódicos.
 
 ## Limitações conhecidas / pendências
-- **Não validado em iPhone/Android reais.** Testado automaticamente em Chrome emulando iPhone SE e Pixel 7. Falta teste manual no Safari (instalação, standalone, reabertura) e em dois aparelhos com o Supabase real.
-- Supabase real ainda não conectado (depende de conta do proprietário). O esquema/RLS foi validado em PostgreSQL (PGlite), mas o **Realtime** só pode ser comprovado no projeto real (há polling de 15 s como reserva).
+- **Não validado em iPhone/Android reais.** O fluxo completo (mesa, código, sincronização, offline, reconexão) passou contra o Supabase real em dois navegadores independentes emulando iPhone SE e Pixel 7 (`e2e/real.spec.ts`, ver `docs/validacao.md`). Falta teste manual no Safari (instalação, standalone, reabertura) e em dois celulares físicos.
+- Supabase real conectado (schema `assimilacao`) e validado por API. O esquema/RLS também é validado em PostgreSQL (PGlite). O **Realtime** não foi habilitado na validação: as atualizações chegam por consulta a cada 8 s (suficiente para a mesa).
 - Características têm *resumos curtos próprios* dos efeitos; o texto oficial está no livro. Assimilações/mutações (cap. 4) são registradas em texto livre.
 - Modo evolução é manual e sem validação de XP (decisão do Assimilador).
 - Escassez (pág. 94) e Teste de Assimilação inicial (pág. 124) não são automatizados.
 - Regras de dados mantidos não são impostas (o livro tem várias exceções); o tradutor apenas soma o que o jogador marcar.
 
 ## Documentos
+- `docs/validacao.md` — o que foi testado (simulado × API real).
 - `docs/supabase-compartilhado.md` — isolamento do Rastreador D&D, passos globais e riscos.
 - `docs/requisitos-assimilador.md` — decisões obrigatórias do Assimilador.
 - `docs/auditoria-referencias.md` — comparação com apps existentes (nenhum código foi copiado).

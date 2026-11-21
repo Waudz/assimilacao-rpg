@@ -106,14 +106,12 @@ export function GmHome({ onSwitchRole }: { onSwitchRole: () => void }) {
   );
 }
 
-export function GmTablePage({ tableId }: { tableId: string }) {
-  const table = useLive(() => db.gmTables.get(tableId).then((t) => t ?? null), [tableId], undefined);
-  const chars = useLive(() => db.remote.where('tableId').equals(tableId).toArray(), [tableId], []);
-  const online = useOnline();
-  const [status, setStatus] = useState<string>('');
-  const [showKey, setShowKey] = useState(false);
-  const [copied, setCopied] = useState(false);
-
+/**
+ * Mantém a cópia local das fichas da mesa atualizada: Realtime (se habilitado), consulta periódica,
+ * ao voltar à aba e ao reconectar. Usado nas telas da mesa E da ficha (que também precisa de atualizações).
+ */
+export function useTablePull(tableId: string): string {
+  const [status, setStatus] = useState('');
   useEffect(() => {
     let alive = true;
     const pull = async () => {
@@ -123,7 +121,7 @@ export function GmTablePage({ tableId }: { tableId: string }) {
     };
     void pull();
     const unsub = syncConfigured ? supabaseRemote.subscribe(tableId, () => void pull()) : () => undefined;
-    const iv = setInterval(() => void pull(), 15000);
+    const iv = setInterval(() => void pull(), 8000);
     const vis = () => document.visibilityState === 'visible' && void pull();
     document.addEventListener('visibilitychange', vis);
     window.addEventListener('online', vis);
@@ -135,6 +133,16 @@ export function GmTablePage({ tableId }: { tableId: string }) {
       window.removeEventListener('online', vis);
     };
   }, [tableId]);
+  return status;
+}
+
+export function GmTablePage({ tableId }: { tableId: string }) {
+  const table = useLive(() => db.gmTables.get(tableId).then((t) => t ?? null), [tableId], undefined);
+  const chars = useLive(() => db.remote.where('tableId').equals(tableId).toArray(), [tableId], []);
+  const online = useOnline();
+  const status = useTablePull(tableId);
+  const [showKey, setShowKey] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (table === undefined) return <><Header title="MESA" backTo="/" /><Page><p>Carregando…</p></Page></>;
   if (!table) return <><Header title="MESA" backTo="/" /><Page><Notice tone="bad">Mesa não encontrada neste aparelho.</Notice></Page></>;
@@ -224,6 +232,7 @@ export function GmTablePage({ tableId }: { tableId: string }) {
 
 export function GmCharacterPage({ tableId, charId }: { tableId: string; charId: string }) {
   const row = useLive(() => db.remote.get(charId).then((r) => r ?? null), [charId], undefined);
+  const status = useTablePull(tableId);
   const online = useOnline();
   if (row === undefined) return <><Header title="FICHA" backTo={`/gm/${tableId}`} /><Page><p>Carregando…</p></Page></>;
   if (!row) return <><Header title="FICHA" backTo={`/gm/${tableId}`} /><Page><Notice tone="warn">Esta ficha não está mais na mesa.</Notice></Page></>;
@@ -232,6 +241,7 @@ export function GmCharacterPage({ tableId, charId }: { tableId: string; charId: 
       <Header title="FICHA · SOMENTE LEITURA" backTo={`/gm/${tableId}`} />
       <Page>
         <Notice tone="info">Visão do Assimilador: somente leitura. Atualizada em {new Date(row.updatedAt).toLocaleString('pt-BR')}{online ? '' : ' (cópia salva, sem conexão)'}.</Notice>
+        <p className="muted" role="status">{status}</p>
         <SheetView char={row.data} />
         <button
           className="btn danger"
