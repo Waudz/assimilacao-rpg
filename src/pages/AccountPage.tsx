@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Header, Notice, Page } from '../components/ui';
 import { go } from '../lib/router';
+import { useAccount } from '../lib/sync/accountStore';
 import { engine } from '../lib/sync';
 import { accountResetPassword, accountSession, accountSignIn, accountSignOut, accountSignUp, accountUpdatePassword, accountUpdateDisplayName, friendlyError } from '../lib/sync/remote';
 import { clearAccountLocal } from '../lib/sync/account';
@@ -11,12 +12,13 @@ export function AccountPage() {
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [user, setUser] = useState<{id:string;email:string;displayName:string}|null>(null);
+  const acct = useAccount();
+  const user = acct.user;
   const [displayName, setDisplayName] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  useEffect(() => { void accountSession().then((u) => { setUser(u); setDisplayName(u?.displayName ?? ''); }).catch((e) => setError(friendlyError(e))); }, []);
+  useEffect(() => { setDisplayName(user?.displayName ?? ''); }, [user?.id, user?.displayName]);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError(''); setMessage('');
@@ -33,11 +35,10 @@ export function AccountPage() {
         setMessage('Senha atualizada.');
       } else {
         await accountSignIn(email.trim(), password);
-        const signedIn = await accountSession();
-        setUser(signedIn);
-        setDisplayName(signedIn?.displayName ?? '');
+        // O store recebe SIGNED_IN do cliente; aqui só decidimos o que mostrar a seguir.
         engine.schedule(0);
-        if (signedIn?.displayName) go('/');
+        const meta = (await accountSession())?.displayName;
+        if (meta) go('/');
         else setMessage('Primeiro acesso ao Assimilação: escolha seu nome de exibição abaixo.');
       }
     } catch (e) { setError(friendlyError(e)); }
@@ -47,7 +48,6 @@ export function AccountPage() {
     e.preventDefault(); setBusy(true); setError(''); setMessage('');
     try {
       const name = await accountUpdateDisplayName(displayName);
-      setUser((u) => u ? { ...u, displayName: name } : u);
       setDisplayName(name);
       setMessage('Nome de exibição salvo no Assimilação RPG.');
     } catch (e) { setError(friendlyError(e)); }
@@ -63,7 +63,6 @@ export function AccountPage() {
       engine.stop();
       await accountSignOut();
       await clearAccountLocal();
-      setUser(null);
       setMessage('Você saiu da conta. As fichas sincronizadas continuam disponíveis quando entrar novamente.');
       engine.start();
     } catch (e) { setError(friendlyError(e)); engine.start(); }
@@ -97,5 +96,6 @@ export function AccountPage() {
         <button className="btn primary" disabled={busy}>{busy ? 'Aguarde…' : mode === 'register' ? 'Criar conta' : mode === 'reset' ? 'Enviar recuperação' : 'Entrar'}</button>
       </form>
     </section>}
+    <p className="muted" data-testid="build-id">Versão {__BUILD_ID__} · {new Date(__BUILT_AT__).toLocaleString('pt-BR')}</p>
   </Page></>;
 }

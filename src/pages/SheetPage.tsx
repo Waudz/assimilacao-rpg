@@ -6,6 +6,7 @@ import { buildBackup, downloadJson } from '../lib/backup';
 import { deleteCharacter, getSyncMeta } from '../lib/db';
 import { useCharacterEditor, useLive, useOnline } from '../lib/hooks';
 import { go } from '../lib/router';
+import { useAccount } from '../lib/sync/accountStore';
 import { engine, supabaseRemote, syncConfigured, syncLabel } from '../lib/sync';
 
 export function SheetPage({ id }: { id: string }) {
@@ -15,6 +16,7 @@ export function SheetPage({ id }: { id: string }) {
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<{ tone: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const acct = useAccount();
   const [ask, dialog] = useConfirm();
 
   const isDraft = char?.status === 'draft';
@@ -117,7 +119,28 @@ export function SheetPage({ id }: { id: string }) {
             </>
           ) : (
             <>
-              <p className="muted">Peça o código ao Assimilador. O código só vincula esta ficha à mesa; ninguém consegue editá-la por ele.</p>
+              {acct.user && acct.tables.length > 0 && (
+                <div className="stack" aria-label="Mesas da sua conta">
+                  <p className="muted">Mesas já vinculadas à sua conta — toque para colocar esta ficha em uma delas:</p>
+                  {acct.tables.map((t) => (
+                    <button
+                      key={t.tableId}
+                      className="btn"
+                      disabled={busy || !online || char.status !== 'ready'}
+                      onClick={async () => {
+                        setBusy(true);
+                        setMsg(null);
+                        const r = await engine.joinTable(char.id, t.tableCode);
+                        setBusy(false);
+                        setMsg(r.ok ? { tone: 'ok', text: `Conectado à mesa “${r.tableName}”. Suas alterações serão sincronizadas.` } : { tone: 'bad', text: r.error });
+                      }}
+                    >
+                      Vincular a {t.tableName}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="muted">Ou use outro código: peça ao Assimilador. O código só vincula esta ficha à mesa; ninguém consegue editá-la por ele.</p>
               <Field label="Código da mesa">
                 <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))} autoCapitalize="characters" autoCorrect="off" inputMode="text" placeholder="8 caracteres" aria-label="Código da mesa" />
               </Field>

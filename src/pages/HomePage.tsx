@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Icon, Mark, type IconName } from '../components/Icon';
-import { Button, Card, EmptyState, Field, Header, Notice, Page, SectionTitle } from '../components/ui';
+import { Button, Card, EmptyState, Field, Header, Loading, Notice, Page, SectionTitle } from '../components/ui';
 import { db, listCharacters, setRole } from '../lib/db';
 import { useLive, useOnline } from '../lib/hooks';
 import { clearPendingTable, getPendingTable, normalizeCode, setPendingTable, type PendingTable } from '../lib/pendingTable';
 import { go } from '../lib/router';
 import { GENERATIONS, STEPS, healthCurrent, healthMax, newCharacter } from '../lib/rules';
 import { engine, syncConfigured, syncLabel } from '../lib/sync';
-import { accountSession, joinAccountTable, listAccountTables, type AccountTable } from '../lib/sync/remote';
+import { joinTableWithAccount, useAccount } from '../lib/sync/accountStore';
 
 export function ToolLinks({ hide = [] }: { hide?: string[] }) {
   const tiles: { to: string; icon: IconName; title: string; hint: string }[] = [
@@ -33,31 +33,42 @@ export function ToolLinks({ hide = [] }: { hide?: string[] }) {
   );
 }
 
-/** Informar o código da mesa antes de ter personagem: fica guardado e é aplicado à primeira ficha concluída. */
+/** Resumo da conta (nome/e-mail) — usado na seleção de papel e na Home. */
+export function AccountSummary() {
+  const acct = useAccount();
+  if (!syncConfigured) return null;
+  if (acct.status === 'loading') return <Loading label="Verificando sua conta…" />;
+  if (!acct.user)
+    return (
+      <Button variant="primary" block icon="user" onClick={() => go('/account')}>
+        Entrar ou criar conta
+      </Button>
+    );
+  return (
+    <Card title="Minha conta" icon="user" tone="accent">
+      <p>
+        Conectado como <b>{acct.user.displayName || acct.user.email}</b>
+      </p>
+      {acct.user.displayName && <p className="muted">{acct.user.email}</p>}
+      <Button size="small" icon="next" onClick={() => go('/account')}>
+        Minha conta
+      </Button>
+    </Card>
+  );
+}
+
+/**
+ * Mesas do jogador. Com conta: o vínculo (conta ↔ mesa) é gravado no servidor na hora e aparece em todos os
+ * dispositivos, mesmo sem personagem. Sem conta: o código fica só neste aparelho (e migra para a conta ao entrar).
+ */
 function TableCodeCard() {
+  const acct = useAccount();
   const [pending, setPending] = useState<PendingTable | null>(getPendingTable());
-  const [account, setAccount] = useState(false);
-  const [tables, setTables] = useState<AccountTable[]>([]);
   const [success, setSuccess] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const online = useOnline();
-  useEffect(() => {
-    let alive = true;
-    const refresh = async () => {
-      try {
-        const user = await accountSession();
-        if (!alive) return;
-        setAccount(Boolean(user));
-        setTables(user ? await listAccountTables() : []);
-      } catch { /* retry when online */ }
-    };
-    void refresh();
-    const timer = setInterval(() => void refresh(), 20000);
-    window.addEventListener('online', refresh);
-    return () => { alive = false; clearInterval(timer); window.removeEventListener('online', refresh); };
-  }, []);
 
   useEffect(() => {
     const on = () => setPending(getPendingTable());
@@ -66,35 +77,43 @@ function TableCodeCard() {
   }, []);
 
   if (!syncConfigured) return null;
+  const signedIn = acct.status === 'signed-in';
+  const checking = acct.status === 'loading'; // não decide o caminho (conta × local) antes de saber
 
   const submit = async () => {
+    if (checking) return;
     setBusy(true);
     setError('');
+    setSuccess('');
     try {
-      if (account) {
-        const r = await joinAccountTable(code);
-        if (!r.ok) setError(r.error === 'invalid_code' ? 'Código inválido. Confira com o Assimilador.' : 'Não foi possível entrar na mesa.');
+      if (signedIn) {
+        const r = await joinTableWithAccount(code);
+        if (!r.ok) setError(r.error);
         else {
-          setTables(await listAccountTables());
-          setSuccess(`Você entrou na mesa ${r.tableName}. Pode criar sua ficha depois, em qualquer dispositivo.`);
+          setSuccess(`Você entrou na mesa ${r.tableName}. Ela está vinculada à sua conta e aparece nos seus outros dispositivos, mesmo sem ficha.`);
           setCode('');
         }
       } else {
         const r = await engine.checkTableCode(code);
-        if (r.ok) { setPendingTable(code); setCode(''); }
-        else setError(r.error);
+        if (r.ok) {
+          setPendingTable(code);
+          setCode('');
+        } else setError(r.error);
       }
-    } catch { setError('Não foi possível sincronizar a mesa. Tente novamente.'); }
-    finally { setBusy(false); }
+    } catch {
+      setError('Não foi possível sincronizar a mesa. Tente novamente.');
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (pending && !account)
+  if (pending && !signedIn && !checking)
     return (
       <Card title="Mesa" icon="users" tone="accent">
         <p>
           Código <b style={{ letterSpacing: '0.15em' }}>{pending.code}</b> confirmado.
         </p>
-        <Notice tone="ok">Quando você concluir seu personagem, ele entra nesta mesa automaticamente.</Notice>
+        <Notice tone="ok">Quando você concluir seu personagem, ele entra nesta mesa automaticamente. Entre na sua conta para manter esta mesa em todos os dispositivos.</Notice>
         <Button size="small" icon="x" onClick={() => clearPendingTable()}>
           Remover código
         </Button>
@@ -103,12 +122,49 @@ function TableCodeCard() {
 
   return (
     <Card title="Minhas mesas" icon="users">
-      {tables.map((t) => <div key={t.tableId} className="stack">
-        <p><strong>{t.tableName}</strong> · Código {t.tableCode} · Participação vinculada à sua conta</p>
-        <button className="btn small" type="button" onClick={() => { setPendingTable(t.tableCode); setSuccess(`Sua próxima ficha concluída será vinculada à mesa ${t.tableName}.`); }}>Usar mesa na próxima ficha</button>
-      </div>)}
+      {signedIn && !acct.tablesLoaded && <Loading label="Carregando suas mesas…" />}
+      {signedIn && acct.tablesLoaded && acct.tables.length === 0 && <EmptyState icon="users" title="Nenhuma mesa ainda">Informe o código do Assimilador abaixo.</EmptyState>}
+      {signedIn &&
+        acct.tables.map((t) => (
+          <div key={t.tableId} className="stack">
+            <p>
+              <strong>{t.tableName}</strong> · Código {t.tableCode} <span className="badge ok">Vinculada à sua conta</span>
+            </p>
+            <button
+              className="btn small"
+              type="button"
+              onClick={() => {
+                setPendingTable(t.tableCode);
+                setSuccess(`Sua próxima ficha concluída será vinculada à mesa ${t.tableName}.`);
+              }}
+            >
+              Usar mesa na próxima ficha
+            </button>
+          </div>
+        ))}
+      {signedIn && acct.tablesError && <Notice tone="warn">{acct.tablesError}</Notice>}
+      {signedIn && pending && !pending.characterId && (
+        <Notice tone="info">
+          O código {pending.code} estava guardado só neste aparelho e será vinculado à sua conta{online ? ' agora mesmo' : ' quando houver conexão'}.
+        </Notice>
+      )}
+      {acct.migration?.status === 'ok' && <Notice tone="ok">O código {acct.migration.code} que estava só neste aparelho agora está vinculado à sua conta: mesa {acct.migration.tableName}.</Notice>}
+      {acct.migration?.status === 'invalid' && (
+        <Notice tone="warn">
+          O código {acct.migration.code}, guardado neste aparelho, não é mais válido. Peça um novo código ao Assimilador.{' '}
+          <button className="btn small" type="button" onClick={() => clearPendingTable()}>
+            Remover
+          </button>
+        </Notice>
+      )}
       {success && <Notice tone="ok">{success}</Notice>}
-      <p className="muted">{account ? 'Entre com o código para vincular a mesa à sua conta, sem precisar criar uma ficha. Ela aparecerá nos seus outros dispositivos.' : 'Você pode informar o código sem cadastro. Para manter a participação na mesa entre dispositivos, entre na sua conta.'}</p>
+      <p className="muted">
+        {signedIn
+          ? 'Entre com o código para vincular a mesa à sua conta, sem precisar criar uma ficha. Ela aparecerá nos seus outros dispositivos.'
+          : checking
+            ? 'Verificando sua conta…'
+            : 'Você pode informar o código sem cadastro. Para manter a participação na mesa entre dispositivos, entre na sua conta.'}
+      </p>
       <Field label="Código da mesa">
         <input
           value={code}
@@ -125,8 +181,8 @@ function TableCodeCard() {
         />
       </Field>
       {error && <Notice tone="bad">{error}</Notice>}
-      <Button variant="primary" icon="key" disabled={busy || code.length !== 8 || !online} onClick={() => void submit()}>
-        {busy ? 'Conferindo…' : account ? 'Entrar na mesa' : 'Usar este código'}
+      <Button variant="primary" icon="key" disabled={busy || checking || code.length !== 8 || !online} onClick={() => void submit()}>
+        {busy ? 'Conferindo…' : checking ? 'Verificando conta…' : signedIn ? 'Entrar na mesa' : 'Usar este código'}
       </Button>
       {!online && <p className="muted">Conecte-se à internet para validar o código.</p>}
     </Card>
@@ -135,8 +191,7 @@ function TableCodeCard() {
 
 export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
   const chars = useLive(listCharacters, [], []);
-  const [hasAccount, setHasAccount] = useState<boolean | null>(null);
-  useEffect(() => { if (syncConfigured) void accountSession().then((u) => setHasAccount(Boolean(u))).catch(() => {}); }, []);
+  const acct = useAccount();
   const metas = useLive(() => db.sync.toArray(), [], []);
   const online = useOnline();
   const [selectedTable, setSelectedTable] = useState<string>('all');
@@ -157,7 +212,8 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
           Novo Infectado
         </Button>
 
-        {syncConfigured && hasAccount === false && <section className="card stack"><h2>Salve suas fichas em uma conta</h2><p className="muted">Você pode experimentar o criador sem login. Para sincronizar suas fichas entre PC e celular, entre na sua conta. É possível participar de mesas sem login.</p><button className="btn primary" onClick={() => go('/account')}>Criar conta ou entrar</button></section>}
+        {syncConfigured && acct.status === 'signed-out' && <section className="card stack"><h2>Salve suas fichas em uma conta</h2><p className="muted">Você pode experimentar o criador sem login. Para sincronizar suas fichas entre PC e celular, entre na sua conta. É possível participar de mesas sem login.</p><button className="btn primary" onClick={() => go('/account')}>Criar conta ou entrar</button></section>}
+        {acct.status === 'signed-in' && <AccountSummary />}
         <TableCodeCard />
 
         {groups.length > 0 && (
@@ -212,8 +268,7 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
 }
 
 export function RolePage({ onChoose }: { onChoose: (r: 'player' | 'gm') => void }) {
-  const [account, setAccount] = useState<{ email: string } | null>(null);
-  useEffect(() => { if (syncConfigured) void accountSession().then((user) => setAccount(user)).catch(() => {}); }, []);
+  const acct = useAccount();
   return (
     <>
       <Header />
@@ -221,9 +276,11 @@ export function RolePage({ onChoose }: { onChoose: (r: 'player' | 'gm') => void 
         <div className="hero">
           <Mark />
           <h1>Como você vai participar?</h1>
-          <p className="muted">{account ? `Conectado como ${account.email}. Escolha como deseja participar.` : 'Você pode jogar sem cadastro. Entre na sua conta para salvar e sincronizar fichas entre dispositivos.'}</p>
+          <p className="muted">
+            {acct.user ? 'Escolha como deseja participar. Sua conta continua conectada ao trocar de papel.' : 'Você pode jogar sem cadastro. Entre na sua conta para salvar e sincronizar fichas entre dispositivos.'}
+          </p>
         </div>
-        <Button variant="primary" block icon="user" onClick={() => go('/account')}>{account ? 'Minha conta' : 'Entrar ou criar conta'}</Button>
+        <AccountSummary />
         <button
           className="choice"
           onClick={() => {
