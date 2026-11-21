@@ -177,7 +177,9 @@ export function GmTablePage({ tableId }: { tableId: string }) {
     <>
       <Header title={table.name.toUpperCase()} backTo="/" />
       <Page>
-        <section className="card">
+        <details className="card gm-table-admin">
+          <summary>Convite e código da mesa</summary>
+          <div className="stack">
           <p className="muted">Código da mesa</p>
           <div className="big-num" style={{ letterSpacing: '0.2em', fontSize: '2.8rem' }} aria-label={`Código ${table.code.split('').join(' ')}`}>{table.code}</div>
           <div className="grid2">
@@ -195,6 +197,34 @@ export function GmTablePage({ tableId }: { tableId: string }) {
             </button>
           </div>
           <p className="muted">O código só permite vincular fichas à mesa. Você apenas visualiza as fichas; quem edita é cada jogador.</p>
+          </div>
+        </details>
+
+        <section className="gm-dashboard" aria-label="Resumo da mesa">
+          <div className="gm-dashboard-head">
+            <div>
+              <h2>Visão da mesa</h2>
+              <p className="muted">Acompanhamento dos Infectados · somente leitura</p>
+            </div>
+            <span className="badge">{chars.length} {chars.length === 1 ? 'Infectado' : 'Infectados'}</span>
+          </div>
+          <div className="gm-dashboard-tools">
+            <Button size="small" icon="dice" onClick={() => go('/dice')}>Tradutor de Dados</Button>
+            <Button size="small" icon="book" onClick={() => go('/rules')}>Regras rápidas</Button>
+          </div>
+          {chars.length > 0 && (
+            <div className="gm-summary-list">
+              {chars.map((r) => (
+                <button key={r.id} className="gm-summary-row" onClick={() => go(`/gm/${tableId}/${r.id}`)} aria-label={`Ver ficha de ${r.data.name || 'Infectado'}`}>
+                  <strong>{r.data.name || 'Sem nome'}</strong>
+                  <span><small>Saúde</small><b>{healthCurrent(r.data)}/{healthMax(r.data)}</b></span>
+                  <span><small>Determinação</small><b>{determinationAvailable(r.data)}/{r.data.determinationLevel}</b></span>
+                  <span><small>Assimilação</small><b>{assimilationAvailable(r.data)}/{assimilationLevel(r.data)}</b></span>
+                  <Icon name="next" />
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         <div className="row">
