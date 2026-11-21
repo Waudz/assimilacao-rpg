@@ -97,7 +97,7 @@ export function SheetView({ char, update }: { char: Character; update?: Update }
                 </select>
               </label>
               <label className="field">Idade (opcional)
-                <input inputMode="numeric" value={char.age} onChange={(e) => update!({ age: e.target.value.replace(/\\D/g, '').slice(0, 3) })} />
+                <input inputMode="numeric" value={char.age} onChange={(e) => update!({ age: e.target.value.replace(/\D/g, '').slice(0, 3) })} />
               </label>
               <p className="muted">As alterações são salvas automaticamente e sincronizadas com a mesa quando houver conexão.</p>
             </div>
