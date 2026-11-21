@@ -1233,3 +1233,9 @@ Painel do Assimilador: visão rápida, somente leitura, sem ocupar espaço com a
 .sheet-manage-backup { border-top:1px solid var(--color-line); padding-top:12px !important; }
 .sheet-delete-action { display:flex; justify-content:flex-end; padding:10px 0 20px; }
 .sheet-delete-action .btn { border-color:var(--color-bad); }
+
+/* Ajuda contextual discreta na criação */
+.apt-help { display:inline-block; position:relative; vertical-align:middle; margin-inline-start:5px; font-size:13px; font-weight:normal; }
+.apt-help > summary { display:inline-grid; place-items:center; width:19px; height:19px; border:1px solid currentColor; border-radius:50%; cursor:pointer; font-weight:700; font-size:12px; list-style:none; }
+.apt-help > summary::-webkit-details-marker { display:none; }
+.apt-help[open] > p { position:absolute; z-index:30; left:0; top:100%; width:min(260px,75vw); padding:12px; border:1px solid var(--color-line,#999); border-radius:8px; background:var(--color-paper,#fffaf0); color:var(--color-ink,#222); box-shadow:0 5px 20px #0003; line-height:1.45; text-align:left; }
