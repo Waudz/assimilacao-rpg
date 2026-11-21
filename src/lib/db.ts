@@ -77,7 +77,7 @@ export async function saveCharacter(c: Character): Promise<Character> {
     await db.characters.put(saved);
     const meta = await db.sync.get(saved.id);
     if (meta?.tableId || meta?.baseRev || localStorage.getItem('assimilacao-account-owner')) {
-      await db.sync.put({ ...meta, dirty: true, state: meta.state === 'conflict' ? 'conflict' : 'pending' });
+      await db.sync.put({ ...(meta ?? { id: saved.id, baseRev: 0 }), dirty: true, state: meta?.state === 'conflict' ? 'conflict' : 'pending' });
     }
   });
   return saved;
