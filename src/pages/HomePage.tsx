@@ -7,6 +7,7 @@ import { clearPendingTable, getPendingTable, normalizeCode, setPendingTable, typ
 import { go } from '../lib/router';
 import { GENERATIONS, STEPS, healthCurrent, healthMax, newCharacter } from '../lib/rules';
 import { engine, syncConfigured, syncLabel } from '../lib/sync';
+import { accountSession } from '../lib/sync/remote';
 
 export function ToolLinks({ hide = [] }: { hide?: string[] }) {
   const tiles: { to: string; icon: IconName; title: string; hint: string }[] = [
@@ -101,6 +102,8 @@ function TableCodeCard() {
 
 export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
   const chars = useLive(listCharacters, [], []);
+  const [hasAccount, setHasAccount] = useState<boolean | null>(null);
+  useEffect(() => { if (syncConfigured) void accountSession().then((u) => setHasAccount(Boolean(u))).catch(() => {}); }, []);
   const metas = useLive(() => db.sync.toArray(), [], []);
   const online = useOnline();
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -121,6 +124,7 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
           Novo Infectado
         </Button>
 
+        {syncConfigured && hasAccount === false && <section className="card stack"><h2>Salve suas fichas em uma conta</h2><p className="muted">Crie uma conta por e-mail para continuar seus personagens no PC e no celular. Sem conta, os dados ficam neste dispositivo.</p><button className="btn primary" onClick={() => go('/account')}>Criar conta ou entrar</button></section>}
         <TableCodeCard />
 
         {groups.length > 0 && (
