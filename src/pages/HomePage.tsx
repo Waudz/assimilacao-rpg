@@ -52,6 +52,8 @@ function TableCodeCard() {
   const submit = async () => {
     setBusy(true);
     setError('');
+    const user = await accountSession().catch(() => null);
+    if (!user) { setBusy(false); go('/account?next=table'); return; }
     const r = await engine.checkTableCode(code);
     setBusy(false);
     if (r.ok) {
@@ -75,7 +77,7 @@ function TableCodeCard() {
 
   return (
     <Card title="Entrar em uma mesa" icon="users">
-      <p className="muted">Já tem o código do Assimilador? Informe agora; seu personagem será vinculado quando estiver pronto.</p>
+      <p className="muted">Para vincular uma ficha a uma mesa, entre na sua conta. Você pode criar e testar personagens sem login.</p>
       <Field label="Código da mesa">
         <input
           value={code}
@@ -124,7 +126,7 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
           Novo Infectado
         </Button>
 
-        {syncConfigured && hasAccount === false && <section className="card stack"><h2>Salve suas fichas em uma conta</h2><p className="muted">Crie uma conta por e-mail para continuar seus personagens no PC e no celular. Sem conta, os dados ficam neste dispositivo.</p><button className="btn primary" onClick={() => go('/account')}>Criar conta ou entrar</button></section>}
+        {syncConfigured && hasAccount === false && <section className="card stack"><h2>Salve suas fichas em uma conta</h2><p className="muted">Você pode experimentar o criador sem login. Para salvar a ficha na nuvem ou vinculá-la a uma mesa, entre na sua conta.</p><button className="btn primary" onClick={() => go('/account')}>Criar conta ou entrar</button></section>}
         <TableCodeCard />
 
         {groups.length > 0 && (
