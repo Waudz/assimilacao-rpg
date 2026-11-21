@@ -3,6 +3,7 @@ import { OfflineBanner } from './components/ui';
 import { getRole, setRole, type Role } from './lib/db';
 import { go, match, usePath } from './lib/router';
 import { engine, syncConfigured } from './lib/sync';
+import { AccountPage } from './pages/AccountPage';
 import { BackupPage } from './pages/BackupPage';
 import { CreatePage } from './pages/CreatePage';
 import { DicePage } from './pages/DicePage';
@@ -38,7 +39,8 @@ export function App() {
 
   let page: React.ReactNode;
   let m: Record<string, string> | null;
-  if (!role) page = <RolePage onChoose={choose} />;
+  if (match(path, '/account')) page = <AccountPage />;
+  else if (!role) page = <RolePage onChoose={choose} />;
   else if (match(path, '/dice')) page = <DicePage />;
   else if (match(path, '/rules')) page = <RulesPage />;
   else if (match(path, '/backup')) page = <BackupPage />;
