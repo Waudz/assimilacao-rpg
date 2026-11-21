@@ -4,6 +4,7 @@ import { Button, Field, Header, Loading, Notice, NumStepper, Page, Pips } from '
 import { TraitPicker, type Update } from '../components/panels';
 import { EQUIPMENT_PACKS, PACK_NAMES, TRAIT_BY_ID, describeRequirements, missingRequirements, traitsCost } from '../lib/catalog';
 import { useCharacterEditor } from '../lib/hooks';
+import { bindPendingTable } from '../lib/pendingTable';
 import { go } from '../lib/router';
 import {
   GENERATIONS,
@@ -80,6 +81,7 @@ export function CreatePage({ id }: { id: string }) {
       setStep(all.step);
       return;
     }
+    bindPendingTable(char.id);
     update(finalizeCharacter(char));
     void flush().then(() => go(`/sheet/${char.id}`, true));
   };
