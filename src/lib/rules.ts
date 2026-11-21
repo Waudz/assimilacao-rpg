@@ -248,8 +248,8 @@ export function validateStep(c: Character, step: number, xpSpent = 0): string[] 
         e.push('Conhecimentos e Práticas: use exatamente 7 pontos, no máximo 2 em cada.');
       break;
     case 5:
-      if (!Number.isInteger(c.initialAssimilation) || c.initialAssimilation < 0 || c.initialAssimilation > 10)
-        e.push('O nível inicial de Assimilação deve ficar entre 0 e 10 (Determinação 10 a 0).');
+      if (!Number.isInteger(c.initialAssimilation) || c.initialAssimilation < 0 || c.initialAssimilation > 9)
+        e.push('O nível inicial de Assimilação deve ficar entre 0 e 9 (Determinação 10 a 1).');
       break;
     case 7:
       if (xpSpent > START_XP) e.push(`Você gastou ${xpSpent} de ${START_XP} pontos de experiência.`);
