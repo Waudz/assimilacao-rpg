@@ -84,6 +84,14 @@ export async function saveCharacter(c: Character): Promise<Character> {
 }
 
 export async function deleteCharacter(id: string): Promise<void> {
+  // Tombstone para evitar que uma ficha excluída offline reapareça da nuvem.
+  try {
+    if (localStorage.getItem('assimilacao-account-owner')) {
+      const key = 'assimilacao-account-deletions';
+      const ids: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([...new Set([...ids, id])]));
+    }
+  } catch { /* armazenamento indisponível */ }
   await db.transaction('rw', db.characters, db.sync, async () => {
     await db.characters.delete(id);
     await db.sync.delete(id);
