@@ -1,36 +1,48 @@
 # Assimilação — Fichas Digitais
 
-PWA mobile-first de apoio a **Assimilação RPG**, separado do Compêndio 5e.
+Aplicativo PWA mobile-first de apoio a Assimilação RPG, independente do Compêndio 5e.
 
-## Estado atual
-- Tela de escolha entre **Infectado** e **Assimilador**, com preferência salva localmente.
-- Tradutor de dados físicos D6, D10 e D12, com seleção de múltiplos dados e soma somente dos dados mantidos.
-- Interface responsiva e service worker para cache do aplicativo.
-- Manifest e metadados para instalação em Android e iOS.
+## Stack
+React 19, TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB) e vite-plugin-pwa. Backend de sincronização ainda não implementado.
 
-**Ainda não implementados:** criador e ficha inteligente, sincronização, convite por código, consulta de regras, armazenamento de fichas em IndexedDB. Os botões de código estão desativados intencionalmente; nenhum código falso é exibido.
+## Estado (protótipo em desenvolvimento)
+- Escolha de papel Infectado/Assimilador salva no aparelho.
+- Criação inicial de Infectados: nome, origens, geração, propósitos, Instintos (9 pontos) e Conhecimentos/Práticas (7 pontos).
+- Validação de limites iniciais; Saúde calculada por nível (1 + Potência + Resolução).
+- Fichas locais no IndexedDB, edição de pontos de Saúde/Determinação e anotações.
+- Tradutor de D6/D10/D12, múltiplos dados e escolha de quais manter.
+- Configuração PWA para instalação e cache; **ainda não testada em dispositivo iOS real**.
 
-## Decisões do produto
-- Sem cadastro/login visível; Assimilador cria grupo e compartilha código; Infectados entram com código.
-- Fichas ficam nos dispositivos, com sincronização segura entre aparelhos quando online.
-- Assimilador **somente lê** as fichas; jogadores controlam alterações e evolução.
-- Conflitos, cartas e eventos continuam físicos.
-- Consulta de regras curta, contextual e com referência de página.
-- Estética inspirada na ficha, mas interface própria e responsiva.
-- iOS: testar Safari e **Adicionar à Tela de Início**; não depender de Background Sync ou push para preservar alterações.
-- Exportação/importação como backup antes de uso real.
+## Limitações importantes
+- **Não está pronto para jogar:** faltam características de Infectados, custos de experiência, equipamentos, evolução e detalhes da Saúde.
+- **Sem sincronização:** código de convite ainda desativado. Assimilador não consegue consultar fichas de outros aparelhos.
+- Não há exportação/importação ou recuperação em caso de limpeza dos dados do navegador.
+- O salvamento das edições de ficha exige tocar em “Salvar alterações”; ainda não é automático.
+- O projeto ainda não passou por build/CI verificado nem teste real em Safari/iPhone.
+- Não usar este protótipo como única cópia de fichas importantes.
 
-## Segurança pendente
-Código de grupo não deve ser credencial de edição. Implementar identidade anônima de dispositivo com tokens secretos, vínculo de propriedade por ficha, permissões server-side, revogação de acesso, proteção contra tentativas de código e reconciliação de edições offline. Nenhum segredo de servidor deve ser enviado ao cliente. Não ativar sincronização antes de testes de acesso cruzado.
+## Desenvolvimento
+```bash
+npm install
+npm run dev
+npm run build
+```
+GitHub Pages precisa de workflow de build e publicação de `dist`; publicar arquivos-fonte diretamente não executará o React.
 
-## Rodar localmente
-Sirva a pasta com um servidor HTTP local (ex.: `python3 -m http.server 8000`). Abra `http://localhost:8000`. Service workers exigem HTTPS ou localhost. Para publicar, habilite GitHub Pages em Settings → Pages (deploy from main/root).
+## Decisões fixadas
+- Sem cadastro visível. Assimilador compartilha código; jogador entra com código.
+- Dados persistem no dispositivo; sincronização futura quando online, com autenticação de dispositivo e permissões reais.
+- Assimilador apenas visualiza fichas. Evolução é manual pelo jogador.
+- Conflitos, baralhos e eventos permanecem físicos.
+- Consulta rápida das regras, sem reproduzir integralmente o livro.
+- Aparência inspirada na ficha original, com interface adaptada a iOS/Android.
 
-## Próximas etapas
-1. Criador e ficha com validações conferidas no livro.
-2. IndexedDB, exportação e testes de persistência.
-3. Regras rápidas e referências de páginas.
-4. Backend de sincronização e convites seguros.
-5. Testes reais no iPhone (Safari instalado), Android e offline.
+## Próximas tarefas
+1. Concluir criação pelas páginas 83–90 e verificar regras de saúde/evolução.
+2. Testes automatizados, CI, lockfile e GitHub Pages via build.
+3. Exportação/importação e persistência confiável offline.
+4. Regras rápidas.
+5. Sincronização segura sem login visível e testes de permissão.
+6. Testes reais de PWA no Safari/iPhone e Android.
 
-Projeto independente, não oficial. Não reproduzir integralmente textos e imagens protegidos do livro.
+Projeto não oficial. Respeitar direitos autorais sobre texto e arte do livro.
