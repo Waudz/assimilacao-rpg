@@ -8,18 +8,27 @@ import { Icon, Mark, type IconName } from './Icon';
 export function Header({ title, backTo, right }: { title?: string; backTo?: string; right?: ReactNode }) {
   const path = usePath();
   const isSheet = path.startsWith('/sheet/');
-  const openSheetSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el instanceof HTMLDetailsElement) { el.open = true; el.querySelector('summary')?.focus(); }
+  const isGmTable = /^\/gm\/[^/]+$/.test(path);
+  const openSheetManagement = () => {
+    const el = document.getElementById('sheet-manage');
+    if (el instanceof HTMLDetailsElement) {
+      el.open = true;
+      el.querySelector('summary')?.focus();
+    }
+  };
+  const closeMenu = (target: EventTarget | null) => {
+    const menu = (target as HTMLElement | null)?.closest('details.header-more');
+    if (menu instanceof HTMLDetailsElement) menu.open = false;
   };
   return (
     <header className="app-header">
-      {backTo !== undefined ? (
-        <button className="icon-btn" aria-label="Voltar" onClick={() => (backTo ? go(backTo) : back())}>
+      <button type="button" className="brand-mark-button" aria-label="Ir ao início" title="Início" onClick={() => go('/')}>
+        <Mark />
+      </button>
+      {backTo !== undefined && (
+        <button type="button" className="icon-btn header-back" aria-label="Voltar" onClick={() => (backTo ? go(backTo) : back())}>
           <Icon name="back" />
         </button>
-      ) : (
-        <Mark />
       )}
       <div className="brand">
         Assimilação
@@ -28,16 +37,17 @@ export function Header({ title, backTo, right }: { title?: string; backTo?: stri
       <nav className="header-actions" aria-label="Acesso rápido">
         <button type="button" className="header-tool" aria-label="Tradutor de dados" title="Tradutor de dados" onClick={() => go('/dice')}><Icon name="dice" /><span>Dados</span></button>
         <button type="button" className="header-tool" aria-label="Regras rápidas" title="Regras rápidas" onClick={() => go('/rules')}><Icon name="book" /><span>Regras</span></button>
+        {right}
         <details className="header-more">
           <summary className="header-tool" aria-label="Mais opções" title="Mais opções"><Icon name="more" /><span>Mais</span></summary>
-          <div className="header-menu">
-            {isSheet && <button type="button" onClick={() => openSheetSection('sheet-table')}><Icon name="users" /> Mesa e sincronização</button>}
-            {isSheet && <button type="button" onClick={() => openSheetSection('sheet-backup')}><Icon name="download" /> Backup desta ficha</button>}
-            <button type="button" onClick={() => go('/backup')}><Icon name="download" /> Backup e importação</button>
-            <button type="button" onClick={() => go('/')}><Icon name="home" /> Início</button>
+          <div className="header-menu" onClick={(e) => closeMenu(e.target)}>
+            {isSheet && <button type="button" onClick={openSheetManagement}><Icon name="users" /> Gerenciar personagem</button>}
+            {isGmTable && <button type="button" onClick={() => document.querySelector<HTMLElement>('.gm-table-admin > summary')?.click()}><Icon name="users" /> Gerenciar mesa</button>}
+            {!isSheet && <button type="button" onClick={() => go('/backup')}><Icon name="download" /> Backup e importação</button>}
+            <button type="button" onClick={() => window.dispatchEvent(new Event('app-switch-role'))}><Icon name="swap" /> Trocar papel</button>
+            {path !== '/' && <button type="button" onClick={() => go('/')}><Icon name="home" /> Início</button>}
           </div>
         </details>
-        {right}
       </nav>
     </header>
   );
