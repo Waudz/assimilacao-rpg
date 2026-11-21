@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "prebuild": "npm run icons",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host",
     "test": "vitest run",
