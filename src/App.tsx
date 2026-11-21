@@ -31,7 +31,7 @@ export function App() {
     go('/', true);
   };
 
-  let page: React.ReactNode;
+  useEffect(() => {\n    window.addEventListener('app-switch-role', switchRole);\n    return () => window.removeEventListener('app-switch-role', switchRole);\n  });\n\n  let page: React.ReactNode;
   let m: Record<string, string> | null;
   if (!role) page = <RolePage onChoose={choose} />;
   else if (match(path, '/dice')) page = <DicePage />;
