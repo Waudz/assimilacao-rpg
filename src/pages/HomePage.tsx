@@ -103,6 +103,9 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
   const chars = useLive(listCharacters, [], []);
   const metas = useLive(() => db.sync.toArray(), [], []);
   const online = useOnline();
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const groups = Array.from(new Map(metas.filter((m) => m.tableId && chars.some((c) => c.id === m.id)).map((m) => [m.tableId!, { id: m.tableId!, name: m.tableName || 'Mesa' }])).values());
+  const visibleChars = selectedTable === null ? chars.filter((c) => !metas.some((m) => m.id === c.id && m.tableId)) : chars.filter((c) => metas.some((m) => m.id === c.id && m.tableId === selectedTable));
 
   const create = async () => {
     const c = newCharacter();
@@ -127,13 +130,22 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
 
         <TableCodeCard />
 
-        <SectionTitle icon="user">Minhas fichas</SectionTitle>
-        {chars.length === 0 && (
-          <EmptyState icon="scroll" title="Nenhuma ficha ainda">
+        {groups.length > 0 && (
+          <section className="card" aria-label="Selecionar mesa">
+            <h2><Icon name="users" /> Mesas</h2>
+            <div className="row wrap">
+              {groups.map((g) => <button key={g.id} type="button" className={selectedTable === g.id ? 'btn primary small' : 'btn small'} aria-pressed={selectedTable === g.id} onClick={() => setSelectedTable(g.id)}>{g.name}</button>)}
+              <button type="button" className={selectedTable === null ? 'btn primary small' : 'btn small'} aria-pressed={selectedTable === null} onClick={() => setSelectedTable(null)}>Sem mesa</button>
+            </div>
+          </section>
+        )}
+        <SectionTitle icon="user">{selectedTable ? 'Fichas da mesa' : 'Fichas sem mesa'}</SectionTitle>
+        {visibleChars.length === 0 && (
+          <EmptyState icon="scroll" title={selectedTable ? "Nenhuma ficha nesta mesa" : "Nenhuma ficha sem mesa"}>
             Crie seu primeiro Infectado ou importe um backup.
           </EmptyState>
         )}
-        {chars.map((c) => {
+        {visibleChars.map((c) => {
           const meta = metas.find((m) => m.id === c.id);
           const lab = syncLabel(meta, online);
           const gen = GENERATIONS.find((g) => g.id === c.generation)?.label;
