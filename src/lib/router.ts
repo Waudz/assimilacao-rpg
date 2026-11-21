@@ -19,7 +19,20 @@ export function usePath(): string {
   return path;
 }
 
+export function toolReturnPath(): string {
+  try {
+    const path = sessionStorage.getItem('assimilacao-tool-return');
+    return path && path.startsWith('/') && !['/dice', '/rules'].includes(path) ? path : '/';
+  } catch { return '/'; }
+}
+
 export function go(path: string, replace = false) {
+  if ((path === '/dice' || path === '/rules') && currentPath() !== path) {
+    const origin = currentPath();
+    if (origin !== '/dice' && origin !== '/rules') {
+      try { sessionStorage.setItem('assimilacao-tool-return', origin); } catch { /* armazenamento indisponível */ }
+    }
+  }
   if (replace) window.location.replace(`#${path}`);
   else window.location.hash = path;
 }

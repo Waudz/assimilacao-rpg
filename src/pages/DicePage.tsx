@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon';
 import { Button, Card, EmptyState, Header, Notice, Page, SectionTitle, SymbolIcon, SymbolRow, SYMBOL_NAMES, SYMBOL_SHORT, type SymbolKind } from '../components/ui';
 import { DIE_TYPES, sumKept, translateFace, type DieType, type Roll } from '../lib/dice';
 import { randomId } from '../lib/rules';
+import { toolReturnPath } from '../lib/router';
 
 /** Total de um símbolo: o número "pulsa" sempre que muda, para o resultado ser percebido na hora. */
 function Total({ kind, value }: { kind: SymbolKind; value: number }) {
@@ -41,7 +42,7 @@ export function DicePage() {
 
   return (
     <>
-      <Header title="TRADUTOR DE DADOS" backTo="/" />
+      <Header title="TRADUTOR DE DADOS" backTo={toolReturnPath()} />
       <Page>
         <p className="muted">Role seus dados físicos e toque no número que saiu. Depois toque nos resultados que ficam mantidos — o total é atualizado na hora.</p>
         <div className="seg" role="group" aria-label="Tipo de dado">
