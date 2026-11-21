@@ -1148,3 +1148,10 @@ dialog.modal::backdrop {
 .cabo-guerra-point:hover span { transform: rotate(45deg) scale(1); }
 .cabo-guerra-ends { display: flex; justify-content: space-between; margin: .4rem 0 1rem; font-weight: 700; font-size: .85rem; }
 @media (prefers-reduced-motion: reduce) { .cabo-guerra-point span { transition: none; } }
+
+/* Experiência: escolhas compactas em uma linha, sem herdar flex-direction:column de .card. */
+.xp-skills { gap: 6px; }
+.xp-skill-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; min-height: 56px; background: var(--color-card); border: 1.5px solid var(--color-line); border-radius: var(--radius); box-shadow: var(--shadow-card); }
+.xp-skill-name { flex: 1 1 auto; min-width: 0; line-height: 1.25; }
+.xp-skill-action.btn.small { flex: 0 0 auto; min-height: 40px; padding: 5px 10px; }
+@media (max-width: 390px) { .xp-skill-row { gap: 5px; padding: 6px; } .xp-skill-action.btn.small { padding: 5px 7px; } }
