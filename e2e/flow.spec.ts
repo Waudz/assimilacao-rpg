@@ -32,7 +32,7 @@ test('cria personagem, joga, fecha e reabre sem perder a ficha', async ({ page }
 test('criação em andamento pode ser retomada', async ({ page }) => {
   await page.goto('./');
   await page.getByRole('button', { name: /Infectado/ }).click();
-  await page.getByRole('button', { name: '+ Novo Infectado' }).click();
+  await page.getByRole('button', { name: /Novo Infectado/ }).click();
   await page.getByLabel('Nome', { exact: true }).fill('Rascunho');
   await page.getByRole('button', { name: 'Próximo' }).click();
   await page.waitForTimeout(500);
@@ -42,21 +42,66 @@ test('criação em andamento pode ser retomada', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Origens' })).toBeVisible();
 });
 
-test('tradutor de dados converte faces e soma mantidos', async ({ page }) => {
+test('tradutor de dados: feedback imediato, seleção, desmarcar e totais instantâneos', async ({ page }) => {
   await page.goto('./#/dice');
   await page.getByRole('button', { name: /Infectado/ }).click().catch(() => undefined);
   await page.goto('./#/dice');
   await page.getByRole('button', { name: 'D12' }).click();
-  await page.getByRole('button', { name: 'Adicionar D12 face 11' }).click();
+  const face11 = page.getByRole('button', { name: 'Adicionar D12 face 11' });
+  await face11.click();
+  await expect(face11).toHaveClass(/flash/); // feedback imediato
   await page.getByRole('button', { name: 'D10' }).click();
   await page.getByRole('button', { name: 'Adicionar D10 face 10' }).click();
   await page.getByRole('button', { name: 'Adicionar D10 face 3' }).click();
-  await page.getByLabel('Manter D12 face 11').check();
-  await page.getByLabel('Manter D10 face 10').check();
-  await expect(page.getByLabel('3 sucessos, 2 adaptações, 2 pressões')).toBeVisible();
-  await page.getByLabel('Remover D10 face 3').click();
+  const total = (s: number, a: number, p: number) => page.getByLabel(`Total mantido: ${s} sucessos, ${a} adaptações, ${p} pressões`);
+  await expect(total(0, 0, 0)).toBeVisible();
+  const r11 = page.getByRole('button', { name: /^D12 face 11:/ });
+  const r10 = page.getByRole('button', { name: /^D10 face 10:/ });
+  await r11.click();
+  await expect(r11).toHaveAttribute('aria-pressed', 'true');
+  await r10.click();
+  await expect(total(3, 2, 2)).toBeVisible();
+  await r11.click(); // desmarca
+  await expect(r11).toHaveAttribute('aria-pressed', 'false');
+  await expect(total(2, 0, 1)).toBeVisible();
+  await page.getByRole('button', { name: 'Remover D10 face 3' }).click();
   await page.getByRole('button', { name: 'Limpar' }).click();
-  await expect(page.getByText('Nenhum dado adicionado.')).toBeVisible();
+  await expect(page.getByText('Nenhum dado adicionado')).toBeVisible();
+});
+
+test('Cabo de Guerra inicial 10/0 (Determinação 10, Assimilação 0) vai para a ficha', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: /Infectado/ }).click();
+  await page.getByRole('button', { name: /Novo Infectado/ }).click();
+  await page.getByLabel('Nome', { exact: true }).fill('Sem Assimilação');
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.getByLabel('Evento Marcante').fill('a');
+  await page.getByLabel('Ocupação').fill('b');
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.getByRole('radio', { name: /Pós-Colapso/ }).click();
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.getByLabel('Propósito Pessoal 1').fill('a');
+  await page.getByLabel('Propósito Pessoal 2').fill('b');
+  await page.getByLabel('Propósito Coletivo').fill('c');
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.getByRole('button', { name: 'Aumentar Potência' }).click({ clickCount: 2, delay: 30 });
+  await page.getByRole('button', { name: 'Aumentar Resolução' }).click();
+  for (const apt of ['Biologia', 'Geografia', 'Armas']) await page.getByRole('button', { name: `Aumentar ${apt}`, exact: true }).click({ clickCount: 2, delay: 30 });
+  await page.getByRole('button', { name: 'Aumentar Furtividade', exact: true }).click();
+  await page.getByRole('button', { name: 'Próximo' }).click(); // Cabo de Guerra
+  // opções 10/0 … 1/9 disponíveis; padrão 9/1 selecionado
+  await expect(page.getByRole('radio', { name: 'Determinação 9, Assimilação 1' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio')).toHaveCount(10);
+  await page.getByRole('radio', { name: 'Determinação 10, Assimilação 0' }).click();
+  await page.getByRole('button', { name: 'Próximo' }).click(); // Saúde
+  await page.getByRole('button', { name: 'Próximo' }).click(); // Características
+  await page.getByRole('button', { name: 'Próximo' }).click(); // Equipamentos
+  await page.getByRole('radio', { name: /Nômade/ }).click();
+  await page.getByRole('button', { name: 'Concluir Infectado' }).click();
+  await expect(page.getByLabel('Determinação: 10 pontos de 10')).toBeVisible();
+  await expect(page.getByLabel('Assimilação: 0 pontos de 0')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Determinação: 10 pontos de 10')).toBeVisible();
 });
 
 test('páginas principais não têm rolagem horizontal', async ({ page }) => {
@@ -83,7 +128,7 @@ test('etapa de Aptidões cabe em tela de 320 px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('./');
   await page.getByRole('button', { name: /Infectado/ }).click();
-  await page.getByRole('button', { name: '+ Novo Infectado' }).click();
+  await page.getByRole('button', { name: /Novo Infectado/ }).click();
   await page.getByLabel('Nome', { exact: true }).fill('Estreito');
   await page.getByRole('button', { name: 'Próximo' }).click();
   await page.getByLabel('Evento Marcante').fill('a');
@@ -110,9 +155,9 @@ test('depois de instalado, o app abre e funciona totalmente offline', async ({ p
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('button', { name: '+ Novo Infectado' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Novo Infectado/ })).toBeVisible();
   await expect(page.getByText(/Sem conexão/)).toBeVisible();
-  await page.getByRole('button', { name: '+ Novo Infectado' }).click();
+  await page.getByRole('button', { name: /Novo Infectado/ }).click();
   await page.getByLabel('Nome', { exact: true }).fill('Offline');
   await page.getByRole('button', { name: 'Próximo' }).click();
   await page.waitForTimeout(500);

@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Header, Notice, NumStepper, Page, Pips, Field } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { Button, Field, Header, Loading, Notice, NumStepper, Page, Pips } from '../components/ui';
 import { TraitPicker, type Update } from '../components/panels';
 import { EQUIPMENT_PACKS, PACK_NAMES, TRAIT_BY_ID, describeRequirements, missingRequirements, traitsCost } from '../lib/catalog';
 import { useCharacterEditor } from '../lib/hooks';
+import { bindPendingTable } from '../lib/pendingTable';
 import { go } from '../lib/router';
 import {
   GENERATIONS,
@@ -61,7 +63,7 @@ export function CreatePage({ id }: { id: string }) {
   const { char, update, flush } = useCharacterEditor(id);
   const [errors, setErrors] = useState<string[]>([]);
 
-  if (char === undefined) return <><Header title="CRIAR INFECTADO" backTo="/" /><Page><p>Carregando…</p></Page></>;
+  if (char === undefined) return <><Header title="CRIAR INFECTADO" backTo="/" /><Page><Loading /></Page></>;
   if (char === null) return <><Header title="CRIAR INFECTADO" backTo="/" /><Page><Notice tone="bad">Ficha não encontrada.</Notice><button className="btn" onClick={() => go('/')}>Início</button></Page></>;
 
   const step = clamp(char.step, 0, STEPS.length - 1);
@@ -79,6 +81,7 @@ export function CreatePage({ id }: { id: string }) {
       setStep(all.step);
       return;
     }
+    bindPendingTable(char.id);
     update(finalizeCharacter(char));
     void flush().then(() => go(`/sheet/${char.id}`, true));
   };
@@ -92,6 +95,7 @@ export function CreatePage({ id }: { id: string }) {
             <i key={i} className={i < step ? 'done' : i === step ? 'cur' : ''} />
           ))}
         </div>
+        <div className="step-kicker">Etapa {step + 1} de {STEPS.length}</div>
         <h1>{STEPS[step]}</h1>
         {errors.length > 0 && (
           <Notice tone="bad">
@@ -234,10 +238,29 @@ function GaugeStep({ char, update }: { char: Character; update: Update }) {
         Recomenda-se Determinação 9 e Assimilação 1. O Assimilador pode aumentar a Assimilação do grupo e reduzir a Determinação na mesma proporção; a soma é sempre 10 (pág. 81).
       </p>
       <div className="card">
-        <div className="row">
-          <span className="grow">Nível inicial de Assimilação (definido pelo Assimilador)</span>
-          <NumStepper label="Assimilação inicial" value={char.initialAssimilation} min={1} max={9} onChange={(v) => update({ initialAssimilation: v })} />
+        <p className="muted">Escolha o par Determinação / Assimilação definido pelo Assimilador:</p>
+        <div className="grid3" role="radiogroup" aria-label="Determinação e Assimilação iniciais">
+          {Array.from({ length: 10 }, (_, a) => a).map((a) => {
+            const on = char.initialAssimilation === a;
+            return (
+              <button
+                key={a}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                aria-label={`Determinação ${10 - a}, Assimilação ${a}`}
+                className={`choice${on ? ' selected' : ''}`}
+                style={{ minHeight: 56, justifyContent: 'center', padding: 8 }}
+                onClick={() => update({ initialAssimilation: a })}
+              >
+                <b style={{ fontSize: '1.3rem' }}>
+                  {10 - a}/{a}
+                </b>
+              </button>
+            );
+          })}
         </div>
+        <p className="muted">Padrão recomendado: 9/1. 10/0 começa sem nenhum nível de Assimilação.</p>
         <div className="grid2">
           <div className="stack" style={{ alignItems: 'center' }}>
             <span className="muted">Determinação</span>

@@ -28,16 +28,21 @@ test('Assimilador e Infectado em navegadores separados: mesa, código, sincroniz
   const code = (await codeEl.textContent())!.trim();
   expect(code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
 
-  // --- Infectado cria personagem e entra pelo código
-  await createCharacter(pl.page);
-  await pl.page.getByRole('tab', { name: 'Ficha' }).click();
+  // --- Infectado informa o código ANTES de ter personagem (nenhuma ficha vazia é criada)
+  await pl.page.goto('./');
+  await pl.page.getByRole('button', { name: /^Infectado/ }).click();
   await pl.page.getByLabel('Código da mesa').fill('ZZZZZZZZ');
-  await pl.page.getByRole('button', { name: 'Entrar na mesa' }).click();
-  await expect(pl.page.getByText(/Código inválido/)).toBeVisible({ timeout: 20000 }); // código errado é recusado
+  await pl.page.getByRole('button', { name: /Usar este código/ }).click();
+  await expect(pl.page.getByRole('alert')).toContainText('Código inválido', { timeout: 20000 }); // código errado é recusado
   await pl.page.getByLabel('Código da mesa').fill(code);
-  await pl.page.getByRole('button', { name: 'Entrar na mesa' }).click();
-  await expect(pl.page.getByText(new RegExp(`Conectado à mesa .*${tableName}`)).first()).toBeVisible({ timeout: 20000 });
-  await expect(pl.page.getByText('Sincronizado').first()).toBeVisible({ timeout: 20000 });
+  await pl.page.getByRole('button', { name: /Usar este código/ }).click();
+  await expect(pl.page.getByText(/confirmado/)).toBeVisible({ timeout: 20000 });
+  await expect(pl.page.getByText('Nenhuma ficha ainda')).toBeVisible(); // nada foi criado
+
+  // --- ao concluir o personagem, ele entra na mesa automaticamente
+  await createCharacter(pl.page);
+  await expect(pl.page.getByText(new RegExp(`Conectado à mesa .*${tableName}`)).first()).toBeVisible({ timeout: 30000 });
+  await expect(pl.page.getByText('Sincronizado').first()).toBeVisible({ timeout: 30000 });
 
   // --- Assimilador vê a ficha (atualização automática, sem recarregar)
   await expect(gm.page.getByRole('button', { name: /Joaquin Jardim/ })).toBeVisible({ timeout: 30000 });
@@ -77,19 +82,19 @@ test('Assimilador e Infectado em navegadores separados: mesa, código, sincroniz
   // --- Segundo jogador (outro navegador) com o mesmo código não vê a ficha do primeiro
   const pl2 = await mk();
   await pl2.page.goto('./');
-  await pl2.page.getByRole('button', { name: /Infectado/ }).click();
+  await pl2.page.getByRole('button', { name: /^Infectado/ }).click();
   await expect(pl2.page.getByText(/Joaquin/)).toHaveCount(0);
   await pl2.ctx.close();
 
   // --- Limpeza: jogador exclui a ficha, Assimilador exclui a mesa
-  pl.page.once('dialog', (d) => void d.accept());
   await pl.page.getByRole('button', { name: 'Excluir ficha' }).click();
-  await expect(pl.page.getByRole('button', { name: '+ Novo Infectado' })).toBeVisible({ timeout: 20000 });
+  await pl.page.getByRole('dialog').getByRole('button', { name: 'Excluir ficha' }).click();
+  await expect(pl.page.getByRole('button', { name: /Novo Infectado/ })).toBeVisible({ timeout: 20000 });
   await gm.page.goto('./#/');
   await gm.page.getByRole('button', { name: new RegExp(tableName) }).click();
   await gm.page.getByText('Recuperação e administração').click();
-  gm.page.once('dialog', (d) => void d.accept());
   await gm.page.getByRole('button', { name: 'Excluir mesa' }).click();
+  await gm.page.getByRole('dialog').getByRole('button', { name: 'Excluir mesa' }).click();
   await expect(gm.page.getByText(tableName)).toHaveCount(0, { timeout: 20000 });
 
   expect(consoleErrors).toEqual([]);

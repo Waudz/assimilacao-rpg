@@ -16,7 +16,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
         // O app inteiro é pré-cacheado; chamadas ao Supabase nunca são cacheadas.
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
       },
       manifest: {
         name: 'Assimilação RPG — Fichas',

@@ -7,14 +7,51 @@ import { DicePage } from '../src/pages/DicePage';
 import { newCharacter } from '../src/lib/rules';
 
 describe('DicePage', () => {
-  it('adiciona faces, mantém dados e soma símbolos', async () => {
+  const total = (s: number, a: number, p: number) => `Total mantido: ${s} sucessos, ${a} adaptações, ${p} pressões`;
+
+  it('toque na face dá feedback imediato e adiciona o resultado', async () => {
     const u = userEvent.setup();
     render(<DicePage />);
     await u.click(screen.getByRole('button', { name: 'D12' }));
-    await u.click(screen.getByRole('button', { name: 'Adicionar D12 face 12' }));
-    await u.click(screen.getByLabelText('Manter D12 face 12'));
-    expect(screen.getAllByLabelText('0 sucessos, 0 adaptações, 2 pressões')).toHaveLength(2); // linha + total
-    await u.click(screen.getByRole('button', { name: 'D6' }));
+    const face = screen.getByRole('button', { name: 'Adicionar D12 face 11' });
+    await u.click(face);
+    expect(face).toHaveClass('flash'); // destaque imediato no botão tocado
+    expect(screen.getByRole('button', { name: /^D12 face 11: não mantido/ })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('seleciona e desmarca resultados com destaque e totais atualizados na hora', async () => {
+    const u = userEvent.setup();
+    render(<DicePage />);
+    await u.click(screen.getByRole('button', { name: 'D12' }));
+    await u.click(screen.getByRole('button', { name: 'Adicionar D12 face 11' })); // 1/2/1
+    await u.click(screen.getByRole('button', { name: 'Adicionar D12 face 12' })); // 0/0/2
+    expect(screen.getByLabelText(total(0, 0, 0))).toBeInTheDocument();
+
+    const r11 = screen.getByRole('button', { name: /^D12 face 11:/ });
+    await u.click(r11);
+    expect(r11).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText(total(1, 2, 1))).toBeInTheDocument();
+    expect(screen.getByText('1 de 2 resultados mantidos.')).toBeInTheDocument();
+
+    await u.click(screen.getByRole('button', { name: /^D12 face 12:/ }));
+    expect(screen.getByLabelText(total(1, 2, 3))).toBeInTheDocument();
+
+    await u.click(r11); // desmarca
+    expect(r11).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByLabelText(total(0, 0, 2))).toBeInTheDocument();
+  });
+
+  it('remove um resultado, limpa tudo e respeita as faces do dado', async () => {
+    const u = userEvent.setup();
+    render(<DicePage />);
+    await u.click(screen.getByRole('button', { name: 'Adicionar D6 face 6' }));
+    await u.click(screen.getByRole('button', { name: /^D6 face 6:/ }));
+    expect(screen.getByLabelText(total(1, 0, 0))).toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Remover D6 face 6' }));
+    expect(screen.getByLabelText(total(0, 0, 0))).toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Adicionar D6 face 3' }));
+    await u.click(screen.getByRole('button', { name: 'Limpar' }));
+    expect(screen.getByText('Nenhum dado adicionado')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Adicionar D6 face 7' })).toBeNull();
   });
 });

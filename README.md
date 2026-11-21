@@ -19,6 +19,13 @@ PWA mobile-first (Android e iPhone) para criar e usar fichas de Infectados e par
 
 Decisões fixas: sem combate/cartas/mapas digitais; o Assimilador só **lê** as fichas; a evolução é manual do jogador.
 
+## Novidades da v2 (interface)
+- **Visual pós-apocalíptico** inspirado na ficha impressa: papel envelhecido, marrom/vinho/azul-petróleo, títulos em Oswald (empacotada, funciona offline), divisor de arame farpado, ícones SVG consistentes, animações leves (respeitam *reduzir movimento*). Mobile primeiro; desktop até 980 px com a ficha em duas colunas. Decisões em `docs/auditoria-interface.md`.
+- **Componentes reutilizáveis:** `Icon`, `Button`, `Card`, `SectionTitle`, `Loading`, `EmptyState`, `Notice`, modal de confirmação (`useConfirm`, `<dialog>` nativo) no lugar de `window.confirm`.
+- **Cabo de Guerra inicial 10/0 … 1/9** (Determinação/Assimilação): o seletor agora inclui **10/0**; padrão continua 9/1.
+- **Mesa antes do personagem:** na Home o Infectado informa o código da mesa; ele é validado no servidor (sem criar ficha) e a primeira ficha concluída entra na mesa automaticamente. Sem migration no Supabase.
+- **Tradutor de dados:** cartões grandes por resultado, seleção/desmarcação com destaque, totais de Sucesso/Adaptação/Pressão atualizados e animados na hora.
+
 ## Arquitetura
 
 ```

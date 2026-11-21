@@ -24,6 +24,7 @@ import {
   type Character,
   type InventoryItem,
 } from '../lib/rules';
+import { Icon } from './Icon';
 import { NumStepper, Pips } from './ui';
 
 export type Update = (patch: Partial<Character> | ((c: Character) => Character)) => void;
@@ -38,7 +39,10 @@ export function HealthPanel({ char, update }: { char: Character; update?: Update
     <section className="card" aria-label="Saúde">
       <div className="row">
         <div className="grow">
-          <h2>Saúde</h2>
+          <h2>
+            <Icon name="drop" />
+            Saúde
+          </h2>
           <p className="muted">
             {healthPerLevel(char)} pontos por nível (1 + Potência + Resolução) · Total {healthCurrent(char)}/{healthMax(char)}
           </p>
@@ -111,7 +115,10 @@ export function GaugePanel({ char, update }: { char: Character; update?: Update 
     });
   return (
     <section className="card" aria-label="Cabo de Guerra">
-      <h2>Cabo de Guerra</h2>
+      <h2>
+        <Icon name="swap" />
+        Cabo de Guerra
+      </h2>
       <div className="grid2">
         <div className="stack" style={{ alignItems: 'center' }}>
           <span className="muted">Determinação</span>
@@ -218,7 +225,10 @@ export function AptitudesPanel({ char, update, evolve = false }: { char: Charact
   );
   return (
     <section className="card" aria-label="Aptidões">
-      <h2>Aptidões</h2>
+      <h2>
+        <Icon name="user" />
+        Aptidões
+      </h2>
       {group('Instintos', 'instinct', INSTINCTS, 0, true, false)}
       {group('Conhecimentos', 'skill', KNOWLEDGE, 0, false, true)}
       {group('Práticas', 'skill', PRACTICES, 6, false, true)}
@@ -250,7 +260,10 @@ export function TraitsList({ char, update, evolve = false }: { char: Character; 
   const owned = char.traits.map((id) => TRAIT_BY_ID[id]).filter(Boolean);
   return (
     <section className="stack">
-      <h2>Características de Infectado</h2>
+      <h2>
+        <Icon name="scroll" />
+        Características de Infectado
+      </h2>
       {owned.length === 0 && !char.customTraits && <p className="muted">Nenhuma Característica registrada.</p>}
       {owned.map((t) => (
         <TraitCard key={t.id} t={t} note={char.traitNotes[t.id]}>
@@ -348,7 +361,10 @@ export function InventoryPanel({ char, update }: { char: Character; update?: Upd
   };
   return (
     <section className="stack">
-      <h2>Inventário</h2>
+      <h2>
+        <Icon name="bag" />
+        Inventário
+      </h2>
       <p className="muted">Pacote inicial: {char.equipmentPack || '—'}. Vestuário, cantil e mochila não precisam ser anotados (pág. 90).</p>
       {char.inventory.length === 0 && <p className="muted">Nenhum item.</p>}
       {char.inventory.map((it) => (

@@ -4,7 +4,8 @@
 //   ao reabrir o app, ao voltar à aba e por temporizador. Não depende de Background Sync (indisponível no Safari/iOS).
 // - Conflitos nunca sobrescrevem em silêncio: o servidor devolve a versão mais nova e o jogador escolhe.
 import { db, getCharacter, getSyncMeta, patchSyncMeta, type SyncMeta } from '../db';
-import { normalizeCharacter, type Character } from '../rules';
+import { clearPendingTable, getPendingTable } from '../pendingTable';
+import { normalizeCharacter, randomId, type Character } from '../rules';
 import { friendlyError, isNetworkError, type Remote } from './remote';
 
 export interface EngineOptions {
@@ -74,6 +75,10 @@ export class SyncEngine {
     try {
       do {
         this.rerun = false;
+        // Recomeça a vinculação pendente mesmo se o jogador reabrir na Home,
+        // sem depender de manter a ficha aberta. O destino foi fixado na conclusão.
+        const pending = getPendingTable();
+        if (pending?.characterId) await this.applyPendingTable(pending.characterId);
         const metas = await db.sync.filter((m) => m.dirty && Boolean(m.tableId) && m.state !== 'conflict').toArray();
         for (const m of metas) await this.pushOne(m.id);
       } while (this.rerun);
@@ -125,6 +130,50 @@ export class SyncEngine {
     } catch (e) {
       return { ok: false, error: friendlyError(e) };
     }
+  }
+
+  /**
+   * Confere o código no servidor SEM ficha e sem efeito colateral, usando a função existente `join_table` com um id
+   * de ficha inexistente: `character_not_synced` = a mesa existe (código válido); `invalid_code` = código inválido.
+   * (Tentativas inválidas contam no mesmo limite de força bruta do servidor.)
+   */
+  async checkTableCode(code: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!this.isOnline()) return { ok: false, error: 'Sem conexão. Conecte-se à internet para validar o código.' };
+    try {
+      const res = await this.remote.join(randomId(), code.trim());
+      if (res.ok) return { ok: true }; // não deveria ocorrer (id inexistente), mas indica mesa válida
+      if (res.error === 'character_not_synced') return { ok: true };
+      return { ok: false, error: joinErrorMessage(res.error) };
+    } catch (e) {
+      return { ok: false, error: friendlyError(e) };
+    }
+  }
+
+  /**
+   * Se há uma mesa pendente e a ficha está concluída, vincula-a automaticamente.
+   * Erro de rede mantém a mesa pendente (nova tentativa depois); código inválido a descarta.
+   */
+  async applyPendingTable(characterId: string): Promise<{ status: 'none' | 'waiting' | 'joined' | 'failed'; tableName?: string; error?: string }> {
+    const pending = getPendingTable();
+    if (!pending || (pending.characterId && pending.characterId !== characterId)) return { status: 'none' };
+    const meta = await getSyncMeta(characterId);
+    if (meta.tableId) {
+      clearPendingTable();
+      return { status: 'none' };
+    }
+    const c = await getCharacter(characterId);
+    if (!c || c.status !== 'ready' || !this.isOnline()) return { status: 'waiting' };
+    const r = await this.joinTable(characterId, pending.code);
+    if (r.ok) {
+      clearPendingTable();
+      return { status: 'joined', tableName: r.tableName };
+    }
+    // Falha definitiva (código inválido/ficha em conflito de dono): descarta. Falha de rede: continua pendente.
+    if (/Código inválido/.test(r.error)) {
+      clearPendingTable();
+      return { status: 'failed', error: r.error };
+    }
+    return { status: 'waiting', error: r.error };
   }
 
   async leaveTable(characterId: string): Promise<void> {
