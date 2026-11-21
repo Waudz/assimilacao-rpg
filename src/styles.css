@@ -1195,3 +1195,13 @@ Painel do Assimilador: visão rápida, somente leitura, sem ocupar espaço com a
 .header-menu button:hover,.header-menu button:focus-visible { background:var(--color-paper-2); }
 .header-menu .icon { width:18px; height:18px; }
 @media(max-width:580px) { .header-tool span { display:none; } .header-tool { padding:5px; } .brand { font-size:clamp(.85rem,3.3vw,1.2rem); letter-spacing:.12em; } .brand small { letter-spacing:.08em; } .header-actions { gap:0; } }
+
+/* Navegação e ações coerentes com a paleta do aplicativo. */
+.app-header { background:var(--color-paper); }
+.header-tool { color:var(--color-wine); }
+.header-tool .icon { stroke-width:2; }
+.header-more[open] > summary, .header-tool:active { color:var(--color-card); background:var(--color-instinct); }
+.header-actions > .btn { color:var(--color-wine); border-color:var(--color-line); }
+.sheet-settings { padding:0; gap:0; }
+.sheet-settings > summary { padding:12px 14px; font-family:var(--font-display); font-size:1rem; font-weight:600; text-transform:uppercase; color:var(--color-instinct); cursor:pointer; }
+.sheet-settings > .stack { padding:0 14px 14px; }
