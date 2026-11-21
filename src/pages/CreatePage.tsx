@@ -125,6 +125,12 @@ export function CreatePage({ id }: { id: string }) {
 
   const pendingSteps = STEPS.map((label, index) => ({ label, index, errors: validateStep(char, index, xpSpent(char)) })).filter((item) => item.errors.length > 0);
   const extraValidation = validateAll(char);
+  if (extraValidation) {
+    const entry = pendingSteps.find((item) => item.index === extraValidation.step);
+    if (entry) entry.errors = [...new Set([...entry.errors, ...extraValidation.errors])];
+    else pendingSteps.push({ label: STEPS[extraValidation.step], index: extraValidation.step, errors: extraValidation.errors });
+    pendingSteps.sort((a, b) => a.index - b.index);
+  }
   const next = () => {
     setErrors([]);
     if (!last) {
