@@ -1121,3 +1121,11 @@ dialog.modal::backdrop {
     animation: none !important;
   }
 }
+
+/* Identidade visual da capa Fastplay: A angular e nome com letras espaçadas. */
+.app-header .mark { width: 42px; height: 42px; flex: 0 0 42px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+.brand { font-family: Arial, Helvetica, sans-serif; font-weight: 800; letter-spacing: .27em; text-transform: uppercase; font-size: clamp(.73rem, 2.7vw, 1.03rem); }
+.brand small { letter-spacing: .12em; text-transform: uppercase; }
+.hero .mark { width: min(180px, 45vw); height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,.25)); }
+.symchip svg, .total svg { overflow: visible; }
+@media(max-width: 390px) { .brand { letter-spacing: .16em; font-size: .73rem; } }
