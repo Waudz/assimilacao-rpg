@@ -172,4 +172,31 @@ export function SheetPage({ id }: { id: string }) {
       {dialog}
     </>
   );
+}<div className="stack sheet-manage-backup"><h2>Backup</h2>
+          <button className="btn" onClick={async () => downloadJson(await buildBackup(char.id), `assimilacao-${(char.name || 'ficha').replace(/\W+/g, '-')}.json`)}>
+            Exportar esta ficha (JSON)
+          </button></div></details>
+<div className="sheet-delete-action">
+          <button
+            className="btn danger"
+            onClick={async () => {
+              if (!(await ask({ title: `Excluir “${char.name}”?`, message: 'A ficha será apagada deste aparelho (e do servidor, se estiver numa mesa). Exporte um backup antes se quiser guardá-la.', confirmLabel: 'Excluir ficha', tone: 'danger' }))) return;
+              if (meta?.tableId) {
+                try {
+                  await supabaseRemote.deleteCharacter(char.id);
+                } catch {
+                  /* sem conexão: apenas local */
+                }
+              }
+              await deleteCharacter(char.id);
+              go('/');
+            }}
+          >
+            Excluir ficha
+          </button>
+        </div>
+      </Page>
+      {dialog}
+    </>
+  );
 }
