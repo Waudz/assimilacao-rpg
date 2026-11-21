@@ -101,7 +101,7 @@ export function SheetPage({ id }: { id: string }) {
 
         <SheetView char={char} update={update} />
 
-        <section className="card" aria-label="Mesa e sincronização">
+        <details className="card sheet-settings" id="sheet-table"><summary>Mesa e sincronização</summary><div className="stack">
           <h2>Mesa</h2>
           {!syncConfigured ? (
             <Notice tone="info">A sincronização com o Assimilador não está configurada nesta instalação. Sua ficha continua salva e funcionando no aparelho; use o backup JSON para guardar uma cópia.</Notice>
@@ -144,10 +144,9 @@ export function SheetPage({ id }: { id: string }) {
             </>
           )}
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
-        </section>
+        </div></details>
 
-        <section className="card">
-          <h2>Backup</h2>
+        <details className="card sheet-settings" id="sheet-backup"><summary>Backup e exclusão</summary><div className="stack">
           <button className="btn" onClick={async () => downloadJson(await buildBackup(char.id), `assimilacao-${(char.name || 'ficha').replace(/\W+/g, '-')}.json`)}>
             Exportar esta ficha (JSON)
           </button>
@@ -168,7 +167,7 @@ export function SheetPage({ id }: { id: string }) {
           >
             Excluir ficha
           </button>
-        </section>
+        </div></details>
       </Page>
       {dialog}
     </>
