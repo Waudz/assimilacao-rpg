@@ -25,8 +25,11 @@ export async function syncAccount(push: (id: string) => Promise<unknown>) {
   if (!user) return;
   const previous = localStorage.getItem(OWNER);
   if (previous !== user.id) {
-    // Não migramos fichas anônimas entre identidades. O usuário optou por começar sem migração.
-    await clearAccountLocal();
+    if (previous && previous !== user.id) {
+      // Troca entre contas: não misturar dados de proprietários diferentes.
+      await clearAccountLocal();
+    }
+    // Primeiro login: manter rascunhos deste dispositivo para que possam ser salvos na conta.
     localStorage.setItem(OWNER, user.id);
   }
   const pendingDeletes: string[] = JSON.parse(localStorage.getItem(DELETIONS) || '[]');
@@ -53,7 +56,17 @@ export async function syncAccount(push: (id: string) => Promise<unknown>) {
   for (const local of await db.characters.toArray()) {
     const meta = await getSyncMeta(local.id);
     if (!remoteIds.has(local.id) || meta.dirty) {
-      if (meta.state !== 'conflict') await push(local.id);
+      if (meta.state === 'conflict') continue;
+      if (!remoteIds.has(local.id) && meta.baseRev > 0 && local.recoverySecret) {
+        // Ficha criada numa sessão anônima: transfere a posse usando seu segredo.
+        const claimed = await supabaseRemote.claim(local.id, local.recoverySecret);
+        if (!claimed.ok) {
+          await patchSyncMeta(local.id, { state: 'error', error: 'Não foi possível vincular esta ficha à conta. Use a recuperação da ficha.' });
+          continue;
+        }
+        await patchSyncMeta(local.id, { baseRev: claimed.rev ?? meta.baseRev, dirty: true, state: 'pending' });
+      }
+      await push(local.id);
     }
   }
 }
