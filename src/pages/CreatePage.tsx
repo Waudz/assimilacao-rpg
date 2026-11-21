@@ -7,6 +7,7 @@ import { useCharacterEditor } from '../lib/hooks';
 import { deleteCharacter, getSyncMeta } from '../lib/db';
 import { supabaseRemote } from '../lib/sync/remote';
 import { bindPendingTable } from '../lib/pendingTable';
+import { prepareAutoJoinForNewCharacter } from '../lib/sync/accountStore';
 import { go } from '../lib/router';
 import {
   GENERATIONS,
@@ -141,6 +142,7 @@ export function CreatePage({ id }: { id: string }) {
       setShowReview(true);
       return;
     }
+    prepareAutoJoinForNewCharacter();
     bindPendingTable(char.id);
     update(finalizeCharacter(char));
     void flush().then(() => go(`/sheet/${char.id}`, true));

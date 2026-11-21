@@ -3,6 +3,7 @@ import { OfflineBanner } from './components/ui';
 import { getRole, setRole, type Role } from './lib/db';
 import { go, match, usePath } from './lib/router';
 import { engine, syncConfigured } from './lib/sync';
+import { initAccountStore } from './lib/sync/accountStore';
 import { AccountPage } from './pages/AccountPage';
 import { BackupPage } from './pages/BackupPage';
 import { CreatePage } from './pages/CreatePage';
@@ -18,6 +19,7 @@ export function App() {
 
   useEffect(() => {
     if (!syncConfigured) return;
+    initAccountStore(); // sessão + mesas da conta (uma vez, antes de qualquer tela decidir)
     engine.start();
     return () => engine.stop();
   }, []);

@@ -6,6 +6,8 @@ import { syncAccount } from './account';
 // - Conflitos nunca sobrescrevem em silêncio: o servidor devolve a versão mais nova e o jogador escolhe.
 import { db, getCharacter, getSyncMeta, patchSyncMeta, type SyncMeta } from '../db';
 import { clearPendingTable, getPendingTable } from '../pendingTable';
+import { getAccountState, refreshAccountTables } from './accountStore';
+import { joinAccountTable } from './remote';
 import { normalizeCharacter, randomId, type Character } from '../rules';
 import { friendlyError, isNetworkError, type Remote } from './remote';
 
@@ -36,9 +38,11 @@ export class SyncEngine {
     const trigger = () => this.schedule(0);
     const onVisible = () => document.visibilityState === 'visible' && trigger();
     window.addEventListener('online', trigger);
+    window.addEventListener('account-changed', trigger); // entrou/saiu/trocou de conta
     document.addEventListener('visibilitychange', onVisible);
     this.stopHooks.push(
       () => window.removeEventListener('online', trigger),
+      () => window.removeEventListener('account-changed', trigger),
       () => document.removeEventListener('visibilitychange', onVisible),
     );
     const onChange = () => {
@@ -128,6 +132,8 @@ export class SyncEngine {
       const res = await this.remote.join(characterId, code.trim());
       if (!res.ok) return { ok: false, error: joinErrorMessage(res.error) };
       await patchSyncMeta(characterId, { tableId: res.tableId, tableName: res.tableName, state: 'synced', syncedAt: Date.now(), dirty: false });
+      // Com conta: garante também o vínculo conta ↔ mesa (idempotente; falha não atrapalha a ficha).
+      if (getAccountState().user) void joinAccountTable(code).then(() => refreshAccountTables()).catch(() => undefined);
       return { ok: true, tableName: res.tableName };
     } catch (e) {
       return { ok: false, error: friendlyError(e) };

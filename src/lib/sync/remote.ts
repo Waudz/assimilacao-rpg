@@ -213,11 +213,55 @@ export function friendlyError(e: unknown): string {
 export const isNetworkError = (e: unknown) => /failed to fetch|network|load failed|not_configured/i.test(e instanceof Error ? e.message : String(e));
 
 /** Contas permanentes usam o mesmo cliente da sincronização por mesa. */
-export async function accountSession() {
+export interface AccountUser {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
+export const AUTH_STORAGE_KEY = 'assimilacao-auth';
+
+interface AuthUserLike {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}
+
+/** Só conta com e-mail é "conta"; sessões anônimas (sem e-mail) servem apenas à sincronização por ficha. */
+export function toAccountUser(u: AuthUserLike | null | undefined): AccountUser | null {
+  if (!u?.email) return null;
+  const name = u.user_metadata?.assimilacao_display_name;
+  return { id: u.id, email: u.email, displayName: typeof name === 'string' ? name : '' };
+}
+
+/**
+ * Lê a sessão persistida SEM rede e sem criar cliente: permite mostrar "Minha conta" imediatamente
+ * ao abrir o app (inclusive offline), em vez de piscar a tela de login.
+ */
+export function readStoredAccount(): AccountUser | null {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { user?: AuthUserLike; currentSession?: { user?: AuthUserLike } };
+    return toAccountUser(parsed.user ?? parsed.currentSession?.user);
+  } catch {
+    return null;
+  }
+}
+
+/** Sessão atual vinda do armazenamento do cliente (renova o token se preciso). Não faz chamada extra ao servidor. */
+export async function accountSession(): Promise<AccountUser | null> {
   const sb = await getClient();
-  const { data, error } = await sb.auth.getUser();
+  const { data, error } = await sb.auth.getSession();
   fail(error);
-  return data.user?.email ? { id: data.user.id, email: data.user.email, displayName: typeof data.user.user_metadata?.assimilacao_display_name === 'string' ? data.user.user_metadata.assimilacao_display_name : '' } : null;
+  return toAccountUser(data.session?.user);
+}
+
+/** Notifica entrada, saída, renovação e atualização de perfil (inclusive feitas em outra aba). */
+export async function onAccountChange(cb: (user: AccountUser | null, event: string) => void): Promise<() => void> {
+  const sb = await getClient();
+  const { data } = sb.auth.onAuthStateChange((event, session) => cb(toAccountUser(session?.user), event));
+  return () => data.subscription.unsubscribe();
 }
 export async function accountSignUp(email: string, password: string) {
   const sb = await getClient();
@@ -233,6 +277,12 @@ export async function accountSignOut() {
   const sb = await getClient();
   const { error } = await sb.auth.signOut();
   fail(error);
+  // Volta à identidade anônima do aparelho para a sincronização por ficha continuar funcionando.
+  try {
+    await sb.auth.signInAnonymously();
+  } catch {
+    /* sem rede: será recriada na próxima chamada */
+  }
 }
 export async function accountResetPassword(email: string) {
   const sb = await getClient();
@@ -258,8 +308,6 @@ export async function accountUpdateDisplayName(name: string) {
 /** Vínculo independente de ficha: segue a conta entre aparelhos. */
 export interface AccountTable { tableId: string; tableName: string; tableCode: string }
 export async function listAccountTables(): Promise<AccountTable[]> {
-  const user = await accountSession();
-  if (!user) return [];
   const sb = await getClient();
   const { data, error } = await sb.rpc('list_my_table_memberships');
   fail(error);
