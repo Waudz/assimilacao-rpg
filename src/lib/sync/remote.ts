@@ -1,5 +1,5 @@
 // Fronteira com o servidor. A interface `Remote` permite testar o motor de sincronização sem rede.
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import type { Character } from '../rules';
 
 export type PushResult = { status: 'ok'; rev: number } | { status: 'conflict'; rev: number; data: Character };
@@ -38,19 +38,35 @@ export interface Remote {
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Client = ReturnType<typeof createClient<any, 'assimilacao'>>;
 export const syncConfigured = Boolean(url && key);
 
-let client: SupabaseClient | null = null;
+/** Schema dedicado: o projeto Supabase é compartilhado com outro app; nada aqui toca em `public`. */
+export const DB_SCHEMA = 'assimilacao';
 
-async function getClient(): Promise<SupabaseClient> {
+let client: Client | null = null;
+
+/** Para testes. */
+export function __setClientForTests(c: Client | null) {
+  client = c;
+}
+
+async function getClient(): Promise<Client> {
   if (!url || !key) throw new Error('not_configured');
-  client ??= createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'assimilacao-auth' } });
+  client ??= createClient(url, key, { db: { schema: DB_SCHEMA }, auth: { persistSession: true, autoRefreshToken: true, storageKey: 'assimilacao-auth' } });
   const { data } = await client.auth.getSession();
   if (!data.session) {
     const { error } = await client.auth.signInAnonymously();
     if (error) throw new Error(error.message);
   }
   return client;
+}
+
+export function withoutSecret(c: Character): Omit<Character, 'recoverySecret'> {
+  const { recoverySecret: _omit, ...rest } = c;
+  void _omit;
+  return rest;
 }
 
 function fail(error: { message: string } | null): asserts error is null {
@@ -72,7 +88,8 @@ export const supabaseRemote: Remote = {
     const sb = await getClient();
     const { data, error } = await sb.rpc('push_character', {
       p_id: c.id,
-      p_data: c,
+      // O segredo de recuperação vai separado (p_secret) e nunca dentro do JSON legível pelo Assimilador.
+      p_data: withoutSecret(c),
       p_base_rev: baseRev,
       p_client_updated_at: c.updatedAt,
       p_secret: c.recoverySecret,
@@ -148,13 +165,13 @@ export const supabaseRemote: Remote = {
     return data ? toRow(data as Row) : null;
   },
   subscribe(tableId, onChange) {
-    let channel: ReturnType<SupabaseClient['channel']> | null = null;
+    let channel: ReturnType<Client['channel']> | null = null;
     let cancelled = false;
     void getClient().then((sb) => {
       if (cancelled) return;
       channel = sb
         .channel(`table-${tableId}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'characters', filter: `table_id=eq.${tableId}` }, onChange)
+        .on('postgres_changes', { event: '*', schema: DB_SCHEMA, table: 'characters', filter: `table_id=eq.${tableId}` }, onChange)
         .subscribe();
     });
     return () => {

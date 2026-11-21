@@ -157,11 +157,15 @@ export function GaugePanel({ char, update }: { char: Character; update?: Update 
       {detAvail === 0 && <div className="notice warn">Estado Suscetível: sem pontos de Determinação, não é possível gastá-la até concluir a Assimilação (pág. 81).</div>}
       {update && (
         <div className="grid2">
-          <button className="btn small" disabled={assim >= 10} onClick={() => shift(-1)}>
-            Assimilação avança (nível +1)
+          <button className="btn small" disabled={det <= 0} onClick={() => shift(-1)}>
+            Assimilação avançou
+            <br />
+            (Determinação −1 nível)
           </button>
-          <button className="btn small" disabled={det >= 10} onClick={() => shift(1)}>
-            Determinação avança (nível +1)
+          <button className="btn small" disabled={assim <= 0} onClick={() => shift(1)}>
+            Determinação recuperou
+            <br />
+            (Assimilação −1 nível)
           </button>
         </div>
       )}

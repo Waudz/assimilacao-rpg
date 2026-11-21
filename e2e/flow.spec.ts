@@ -151,3 +151,25 @@ test('etapa de Aptidões cabe em tela de 320 px', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Aptidões' })).toBeVisible();
   await noHorizontalScroll(page);
 });
+
+test('depois de instalado, o app abre e funciona totalmente offline', async ({ page, context }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /Infectado/ }).click();
+  // aguarda o service worker assumir o controle (cache pré-carregado)
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole('button', { name: '+ Novo Infectado' })).toBeVisible();
+  await expect(page.getByText(/Sem conexão/)).toBeVisible();
+  await page.getByRole('button', { name: '+ Novo Infectado' }).click();
+  await page.getByLabel('Nome', { exact: true }).fill('Offline');
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.waitForTimeout(500);
+  await page.goto('/#/');
+  await expect(page.getByRole('button', { name: /Offline/ })).toBeVisible();
+  await context.setOffline(false);
+});

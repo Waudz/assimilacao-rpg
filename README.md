@@ -30,20 +30,23 @@ src/
   lib/sync/engine.ts  motor offline-first (fila = flag dirty + reenvio), conflitos, vínculo à mesa
   lib/sync/remote.ts  cliente Supabase (interface Remote, testável sem rede)
   components/, pages/ interface React
-supabase/migrations   esquema, RLS e funções (SECURITY DEFINER)
-tests/                Vitest (regras, dados, sync, RLS em PostgreSQL real via PGlite)
+supabase/migrations   schema `assimilacao`: tabelas, RLS e funções (SECURITY DEFINER) — aditiva
+supabase/optional     passos manuais e globais (Realtime), NÃO executados por migration
+tests/                Vitest (regras, dados, sync, cliente, RLS e isolamento em PostgreSQL real via PGlite)
 e2e/                  Playwright (iPhone SE e Pixel 7)
 ```
 
-Stack: React 19, TypeScript, Vite 7, Tailwind 4, Dexie, vite-plugin-pwa, Supabase (PostgreSQL + Auth anônima + Realtime).
+Stack: React 19, TypeScript, Vite 7, Tailwind 4, Dexie, vite-plugin-pwa, Supabase (PostgreSQL + Auth anônima + Realtime), **compartilhado com o Rastreador D&D**: o app usa só o schema `assimilacao` (ver `docs/supabase-compartilhado.md`).
 
 ### Sincronização e segurança
+- **Projeto Supabase compartilhado:** tudo vive no schema `assimilacao`; o cliente é criado com `db.schema = 'assimilacao'`. Nada é criado, lido ou alterado em `public`/`auth`/`storage`. Isolamento garantido por permissões, RLS e testes automatizados que comparam o catálogo e os dados do Rastreador antes e depois.
 - Cada aparelho entra com **autenticação anônima** do Supabase (sem tela de login). `auth.uid()` identifica o aparelho.
-- **O código da mesa não é credencial de edição**: só vincula uma ficha *própria* à mesa (`join_table`). Códigos têm 8 caracteres sem ambiguidade (≈10¹²) e há limite de 8 tentativas erradas por 10 min por aparelho.
+- **O código da mesa não é credencial de edição**: só vincula uma ficha *própria* à mesa (`join_table`). Códigos têm 8 caracteres sem ambiguidade (≈10¹²) e há limite de 8 tentativas erradas por 10 min por aparelho **e** 300 globais (identidades anônimas são baratas).
 - Nenhuma tabela aceita INSERT/UPDATE/DELETE direto do cliente; toda escrita passa por funções que validam o dono **no servidor**. Assimilador e dono podem ler; só o dono escreve.
 - Só fichas **vinculadas a uma mesa** são enviadas ao servidor. Antes disso ficam apenas no aparelho.
 - Offline: edições ficam marcadas como pendentes e são reenviadas ao voltar a conexão, ao reabrir o app, ao voltar à aba e a cada 20 s (não depende de Background Sync, indisponível no Safari). Estados exibidos: *Salvo neste dispositivo*, *Aguardando conexão*, *Sincronizando…*, *Sincronizado*, *Erro de sincronização*, *Conflito*.
 - Conflitos (ex.: ficha restaurada de backup mais antigo) **nunca sobrescrevem em silêncio**: o jogador escolhe a versão do servidor ou a local.
+- O segredo de recuperação **não** é enviado dentro do JSON da ficha (o Assimilador a lê); só o hash fica no servidor, em tabela sem acesso do cliente.
 - Recuperação: cada ficha tem um segredo (dentro do backup JSON) que permite reassumi-la em aparelho novo, revogando o antigo. Cada mesa tem uma *chave de recuperação*. O Assimilador pode remover fichas da mesa, girar o código e excluir a mesa.
 
 ## Executar localmente
@@ -57,16 +60,18 @@ npm run build && npm run test:e2e   # E2E (use PW_CHANNEL=chrome para usar o Chr
 
 Sem as variáveis do Supabase o app roda normalmente, mas **criar/entrar em mesas fica desativado** (com aviso na tela).
 
-## Configurar o Supabase (necessário uma vez)
+## Configurar o Supabase (projeto compartilhado `rastreador-dnd`)
 
-1. Crie um projeto em supabase.com (plano gratuito basta).
-2. **Authentication → Providers → Anonymous sign-ins → habilitar.** (Recomendado: ativar CAPTCHA/limites de taxa em *Authentication → Rate Limits*.)
-3. No **SQL Editor**, execute o conteúdo de `supabase/migrations/20261121000000_init.sql`.
-4. Copie *Project URL* e a chave **anon/publishable** (nunca a `service_role`) de *Project Settings → API*.
-5. Local: copie `.env.example` para `.env.local` e preencha.
-6. Publicação: no GitHub, *Settings → Secrets and variables → Actions → Variables* → crie `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+> **Preservar os dados do Rastreador D&D é exigência absoluta.** O código **não** executa nada no Supabase: a instalação é feita por quem audita o projeto. Detalhes, garantias, riscos e reversão em [`docs/supabase-compartilhado.md`](docs/supabase-compartilhado.md).
 
-A chave anon é pública por desenho; quem protege os dados são as políticas RLS e funções da migration (testadas em `tests/rls.test.ts`).
+1. **Auditar** o projeto (schemas, tabelas, policies `TO authenticated`, publicações) e fazer backup.
+2. Executar `supabase/migrations/20261121120000_assimilacao_schema.sql` (aditiva; só cria o schema `assimilacao`).
+3. *Project Settings → API → Exposed schemas*: **acrescentar** `assimilacao` (sem remover os atuais).
+4. Avaliar o login anônimo (*Authentication → Allow anonymous sign-ins*, **global**): usuários anônimos têm o role `authenticated`. **Só habilitar depois de conferir que nenhuma policy do Rastreador libera dados a qualquer `authenticated`** — ou usar um projeto Supabase separado (o código não muda, só as variáveis).
+5. Opcional: `supabase/optional/realtime.sql` (Realtime). Sem ele há consulta a cada 15 s.
+6. Copiar *Project URL* e a chave **anon/publishable** (nunca `service_role`). Local: `.env.local` (modelo em `.env.example`). Publicação: variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` em *GitHub → Settings → Secrets and variables → Actions → Variables*.
+
+A chave anon é pública por desenho; quem protege os dados são as políticas RLS e as funções da migration (testadas em `tests/rls.test.ts` e `tests/isolation.test.ts`).
 
 ## Publicar (GitHub Pages)
 
@@ -97,5 +102,6 @@ A chave anon é pública por desenho; quem protege os dados são as políticas R
 - Regras de dados mantidos não são impostas (o livro tem várias exceções); o tradutor apenas soma o que o jogador marcar.
 
 ## Documentos
+- `docs/supabase-compartilhado.md` — isolamento do Rastreador D&D, passos globais e riscos.
 - `docs/requisitos-assimilador.md` — decisões obrigatórias do Assimilador.
 - `docs/auditoria-referencias.md` — comparação com apps existentes (nenhum código foi copiado).
