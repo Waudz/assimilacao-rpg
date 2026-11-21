@@ -146,7 +146,7 @@ describe('catálogo de Características (pág. 83–89)', () => {
     expect(missingRequirements({ ...c, skills: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2] }, TRAIT_BY_ID['orientacao'])).toHaveLength(0);
     // Resiliente exige nível de Assimilação 2+
     expect(missingRequirements(c, TRAIT_BY_ID['resiliente'])).toHaveLength(1);
-    expect(missingRequirements({ ...c, determinationLevel: 8 }, TRAIT_BY_ID['resiliente'])).toHaveLength(0);
+    expect(missingRequirements({ ...c, status: 'ready' as const, determinationLevel: 8 }, TRAIT_BY_ID['resiliente'])).toHaveLength(0);
   });
   it('melhorias de experiência contam para requisitos', () => {
     const c = withApt({ skillUps: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] });
