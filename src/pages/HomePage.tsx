@@ -115,14 +115,7 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
 
   return (
     <>
-      <Header
-        title="INFECTADO"
-        right={
-          <button type="button" className="header-tool" onClick={onSwitchRole} aria-label="Trocar papel"><Icon name="swap" />
-            <span>Trocar papel</span>
-          </button>
-        }
-      />
+      <Header title="INFECTADO" />
       <Page>
         <Button variant="primary" size="big" block icon="plus" onClick={() => void create()}>
           Novo Infectado
