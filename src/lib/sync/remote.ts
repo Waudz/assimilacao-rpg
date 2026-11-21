@@ -32,7 +32,7 @@ export interface Remote {
   listTables(): Promise<ServerTable[]>;
   listTableCharacters(tableId: string): Promise<ServerCharacterRow[]>;
   getOwn(characterId: string): Promise<ServerCharacterRow | null>;
-  listOwn(): Promise<ServerCharacterRow[]>;
+  listOwn?(): Promise<ServerCharacterRow[]>;
   /** Chama `onChange` quando houver alterações em fichas da mesa. Retorna função de cancelamento. */
   subscribe(tableId: string, onChange: () => void): () => void;
 }
