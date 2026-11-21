@@ -162,8 +162,6 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
           );
         })}
 
-        <SectionTitle icon="bag">Ferramentas</SectionTitle>
-        <ToolLinks />
         <Notice tone="info">Suas fichas ficam salvas neste aparelho e funcionam sem internet. Faça backups periódicos: o iPhone pode apagar dados de sites que ficam muito tempo sem uso.</Notice>
       </Page>
     </>
