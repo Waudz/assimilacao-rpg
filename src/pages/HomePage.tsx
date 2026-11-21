@@ -7,7 +7,7 @@ import { clearPendingTable, getPendingTable, normalizeCode, setPendingTable, typ
 import { go } from '../lib/router';
 import { GENERATIONS, STEPS, healthCurrent, healthMax, newCharacter } from '../lib/rules';
 import { engine, syncConfigured, syncLabel } from '../lib/sync';
-import { accountSession } from '../lib/sync/remote';
+import { accountSession, joinAccountTable, listAccountTables, type AccountTable } from '../lib/sync/remote';
 
 export function ToolLinks({ hide = [] }: { hide?: string[] }) {
   const tiles: { to: string; icon: IconName; title: string; hint: string }[] = [
@@ -36,10 +36,28 @@ export function ToolLinks({ hide = [] }: { hide?: string[] }) {
 /** Informar o código da mesa antes de ter personagem: fica guardado e é aplicado à primeira ficha concluída. */
 function TableCodeCard() {
   const [pending, setPending] = useState<PendingTable | null>(getPendingTable());
+  const [account, setAccount] = useState(false);
+  const [tables, setTables] = useState<AccountTable[]>([]);
+  const [success, setSuccess] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const online = useOnline();
+  useEffect(() => {
+    let alive = true;
+    const refresh = async () => {
+      try {
+        const user = await accountSession();
+        if (!alive) return;
+        setAccount(Boolean(user));
+        setTables(user ? await listAccountTables() : []);
+      } catch { /* retry when online */ }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 20000);
+    window.addEventListener('online', refresh);
+    return () => { alive = false; clearInterval(timer); window.removeEventListener('online', refresh); };
+  }, []);
 
   useEffect(() => {
     const on = () => setPending(getPendingTable());
@@ -52,15 +70,25 @@ function TableCodeCard() {
   const submit = async () => {
     setBusy(true);
     setError('');
-    const r = await engine.checkTableCode(code);
-    setBusy(false);
-    if (r.ok) {
-      setPendingTable(code);
-      setCode('');
-    } else setError(r.error);
+    try {
+      if (account) {
+        const r = await joinAccountTable(code);
+        if (!r.ok) setError(r.error === 'invalid_code' ? 'Código inválido. Confira com o Assimilador.' : 'Não foi possível entrar na mesa.');
+        else {
+          setTables(await listAccountTables());
+          setSuccess(`Você entrou na mesa ${r.tableName}. Pode criar sua ficha depois, em qualquer dispositivo.`);
+          setCode('');
+        }
+      } else {
+        const r = await engine.checkTableCode(code);
+        if (r.ok) { setPendingTable(code); setCode(''); }
+        else setError(r.error);
+      }
+    } catch { setError('Não foi possível sincronizar a mesa. Tente novamente.'); }
+    finally { setBusy(false); }
   };
 
-  if (pending)
+  if (pending && !account)
     return (
       <Card title="Mesa" icon="users" tone="accent">
         <p>
@@ -74,8 +102,10 @@ function TableCodeCard() {
     );
 
   return (
-    <Card title="Entrar em uma mesa" icon="users">
-      <p className="muted">Entre em uma mesa com o código do Assimilador, mesmo sem conta. Para recuperar e sincronizar suas fichas em outros dispositivos, crie uma conta por e-mail.</p>
+    <Card title="Minhas mesas" icon="users">
+      {tables.map((t) => <p key={t.tableId}><strong>{t.tableName}</strong> · Código {t.tableCode} · Participação vinculada à sua conta</p>)}
+      {success && <Notice tone="ok">{success}</Notice>}
+      <p className="muted">{account ? 'Entre com o código para vincular a mesa à sua conta, sem precisar criar uma ficha. Ela aparecerá nos seus outros dispositivos.' : 'Você pode informar o código sem cadastro. Para manter a participação na mesa entre dispositivos, entre na sua conta.'}</p>
       <Field label="Código da mesa">
         <input
           value={code}
@@ -93,7 +123,7 @@ function TableCodeCard() {
       </Field>
       {error && <Notice tone="bad">{error}</Notice>}
       <Button variant="primary" icon="key" disabled={busy || code.length !== 8 || !online} onClick={() => void submit()}>
-        {busy ? 'Conferindo…' : 'Usar este código'}
+        {busy ? 'Conferindo…' : account ? 'Entrar na mesa' : 'Usar este código'}
       </Button>
       {!online && <p className="muted">Conecte-se à internet para validar o código.</p>}
     </Card>
