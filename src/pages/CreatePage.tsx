@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '../components/Icon';
-import { Button, Field, Header, Loading, Notice, NumStepper, Page, Pips } from '../components/ui';
+import { Button, Field, Header, Loading, Notice, NumStepper, Page, Pips, useConfirm } from '../components/ui';
 import { TraitPicker, type Update } from '../components/panels';
 import { EQUIPMENT_PACKS, PACK_NAMES, TRAIT_BY_ID, describeRequirements, missingRequirements, traitsCost } from '../lib/catalog';
 import { useCharacterEditor } from '../lib/hooks';
+import { deleteCharacter, getSyncMeta } from '../lib/db';
+import { supabaseRemote } from '../lib/sync/remote';
 import { bindPendingTable } from '../lib/pendingTable';
 import { go } from '../lib/router';
 import {
@@ -92,6 +94,26 @@ export function finalizeCharacter(c: Character): Character {
 export function CreatePage({ id }: { id: string }) {
   const { char, update, flush } = useCharacterEditor(id);
   const [errors, setErrors] = useState<string[]>([]);
+  const [ask, dialog] = useConfirm();
+  const [cancelling, setCancelling] = useState(false);
+
+  async function cancelCreation() {
+    if (!char || cancelling) return;
+    if (!(await ask({ title: 'Cancelar criação?', message: 'O Infectado em criação será excluído. Essa ação não pode ser desfeita.', confirmLabel: 'Excluir rascunho', tone: 'danger' }))) return;
+    setCancelling(true);
+    try {
+      await flush();
+      const meta = await getSyncMeta(id);
+      if (meta.baseRev > 0 || meta.tableId) {
+        await supabaseRemote.deleteCharacter(id);
+      }
+      await deleteCharacter(id);
+      go('/', true);
+    } catch {
+      setErrors(['Não foi possível excluir o rascunho. Tente novamente quando estiver conectado.']);
+      setCancelling(false);
+    }
+  }
 
   if (char === undefined) return <><Header title="CRIAR INFECTADO" backTo="/" /><Page><Loading /></Page></>;
   if (char === null) return <><Header title="CRIAR INFECTADO" backTo="/" /><Page><Notice tone="bad">Ficha não encontrada.</Notice><button className="btn" onClick={() => go('/')}>Início</button></Page></>;
@@ -136,6 +158,7 @@ export function CreatePage({ id }: { id: string }) {
         )}
         <StepBody step={step} char={char} update={update} />
         <p className="muted">Salvo automaticamente neste dispositivo. Você pode sair e continuar depois.</p>
+        <button type="button" className="btn danger" disabled={cancelling} onClick={() => void cancelCreation()}>{cancelling ? 'Excluindo…' : 'Cancelar criação e excluir rascunho'}</button>
       </Page>
       <div style={{ height: 70 }} />
       <div className="sticky-actions" style={{ maxWidth: 640, margin: '0 auto' }}>
@@ -146,6 +169,7 @@ export function CreatePage({ id }: { id: string }) {
           {last ? 'Concluir Infectado' : 'Próximo'}
         </button>
       </div>
+      {dialog}
     </>
   );
 }
