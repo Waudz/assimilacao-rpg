@@ -55,9 +55,15 @@ export function SheetView({ char, update }: { char: Character; update?: Update }
 
       {tab === 'Ficha' && (
         <div className="stack" {...panel('Ficha')}>
-          <HealthPanel char={char} update={update} />
-          <GaugePanel char={char} update={update} />
-          <AptitudesPanel char={char} update={update} evolve={evolve} />
+          <div className="sheet-cols">
+            <div className="stack">
+              <HealthPanel char={char} update={update} />
+            </div>
+            <div className="stack">
+              <GaugePanel char={char} update={update} />
+              <AptitudesPanel char={char} update={update} evolve={evolve} />
+            </div>
+          </div>
           {!ro && (
             <label className="row card flat" style={{ cursor: 'pointer' }}>
               <input type="checkbox" style={{ width: 24, minHeight: 24 }} checked={evolve} onChange={(e) => setEvolve(e.target.checked)} />

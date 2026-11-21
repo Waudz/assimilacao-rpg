@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SheetView } from '../components/SheetView';
-import { Field, Header, Notice, Page } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { Button, Card, Field, Header, Loading, Notice, Page, SectionTitle, useConfirm } from '../components/ui';
 import { buildBackup, downloadJson } from '../lib/backup';
 import { deleteCharacter, getSyncMeta } from '../lib/db';
 import { useCharacterEditor, useLive, useOnline } from '../lib/hooks';
@@ -14,13 +15,34 @@ export function SheetPage({ id }: { id: string }) {
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<{ tone: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [ask, dialog] = useConfirm();
 
   const isDraft = char?.status === 'draft';
   useEffect(() => {
     if (isDraft && char) go(`/create/${char.id}`, true);
   }, [isDraft, char]);
 
-  if (char === undefined || isDraft) return <><Header title="FICHA" backTo="/" /><Page><p>Carregando…</p></Page></>;
+  // Mesa pendente (código informado antes de existir ficha): vincula automaticamente a ficha concluída.
+  const status0 = char?.status;
+  useEffect(() => {
+    if (status0 !== 'ready') return;
+    let alive = true;
+    const run = async () => {
+      const r = await engine.applyPendingTable(id);
+      if (!alive) return;
+      if (r.status === 'joined') setMsg({ tone: 'ok', text: `Conectado à mesa “${r.tableName}”. Suas alterações serão sincronizadas.` });
+      else if (r.status === 'failed') setMsg({ tone: 'bad', text: r.error ?? 'Não foi possível entrar na mesa.' });
+    };
+    void run();
+    const on = () => void run();
+    window.addEventListener('online', on);
+    return () => {
+      alive = false;
+      window.removeEventListener('online', on);
+    };
+  }, [id, status0]);
+
+  if (char === undefined || isDraft) return <><Header title="FICHA" backTo="/" /><Page><Loading /></Page></>;
   if (char === null)
     return (
       <>
@@ -44,7 +66,7 @@ export function SheetPage({ id }: { id: string }) {
     if (r.ok) setCode('');
   };
   const leave = async () => {
-    if (!confirm('Sair da mesa? O Assimilador deixará de ver esta ficha.')) return;
+    if (!(await ask({ title: 'Sair da mesa?', message: 'O Assimilador deixará de ver esta ficha.', confirmLabel: 'Sair da mesa', tone: 'danger' }))) return;
     setBusy(true);
     try {
       await engine.leaveTable(char.id);
@@ -132,7 +154,7 @@ export function SheetPage({ id }: { id: string }) {
           <button
             className="btn danger"
             onClick={async () => {
-              if (!confirm(`Excluir “${char.name}” deste aparelho? Exporte um backup antes se quiser guardá-la.`)) return;
+              if (!(await ask({ title: `Excluir “${char.name}”?`, message: 'A ficha será apagada deste aparelho (e do servidor, se estiver numa mesa). Exporte um backup antes se quiser guardá-la.', confirmLabel: 'Excluir ficha', tone: 'danger' }))) return;
               if (meta?.tableId) {
                 try {
                   await supabaseRemote.deleteCharacter(char.id);
@@ -148,6 +170,7 @@ export function SheetPage({ id }: { id: string }) {
           </button>
         </section>
       </Page>
+      {dialog}
     </>
   );
 }

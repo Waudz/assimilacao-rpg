@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { SheetView } from '../components/SheetView';
-import { Field, Header, Notice, Page } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { Button, EmptyState, Field, Header, Loading, Notice, Page, SectionTitle, useConfirm } from '../components/ui';
 import { db, setRole, type GmTable } from '../lib/db';
 import { useLive, useOnline } from '../lib/hooks';
+import { ToolLinks } from './HomePage';
 import { go } from '../lib/router';
 import { assimilationAvailable, determinationAvailable, healthCurrent, healthMax, assimilationLevel } from '../lib/rules';
 import { engine, supabaseRemote, syncConfigured } from '../lib/sync';
@@ -68,15 +70,19 @@ export function GmHome({ onSwitchRole }: { onSwitchRole: () => void }) {
 
   return (
     <>
-      <Header title="ASSIMILADOR" right={<button className="btn small" onClick={onSwitchRole}>Trocar papel</button>} />
+      <Header title="ASSIMILADOR" right={<Button size="small" icon="swap" onClick={onSwitchRole} aria-label="Trocar papel"><span className="hide-sm">Trocar papel</span></Button>} />
       <Page>
         {!syncConfigured && <Notice tone="warn">A sincronização não está configurada nesta instalação (faltam as variáveis do Supabase). Criar mesas não está disponível. O tradutor de dados e as regras rápidas funcionam normalmente.</Notice>}
-        <h2>Minhas mesas</h2>
-        {tables.length === 0 && <p className="muted">Você ainda não criou nenhuma mesa.</p>}
+        <SectionTitle icon="users">Minhas mesas</SectionTitle>
+        {tables.length === 0 && <EmptyState icon="users" title="Nenhuma mesa ainda">Crie uma mesa abaixo e compartilhe o código com os jogadores.</EmptyState>}
         {tables.map((t) => (
           <button key={t.id} className="choice" onClick={() => go(`/gm/${t.id}`)}>
-            <b>{t.name}</b>
-            <span>Código {t.code}</span>
+            <span className="choice-icon"><Icon name="users" /></span>
+            <span className="choice-body">
+              <b>{t.name}</b>
+              <span>Código {t.code}</span>
+            </span>
+            <Icon name="next" />
           </button>
         ))}
         <section className="card">
@@ -104,10 +110,8 @@ export function GmHome({ onSwitchRole }: { onSwitchRole: () => void }) {
           </div>
         </details>
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
-        <div className="grid2">
-          <button className="btn" onClick={() => go('/dice')}>🎲 Tradutor de dados</button>
-          <button className="btn" onClick={() => go('/rules')}>📖 Regras rápidas</button>
-        </div>
+        <SectionTitle icon="bag">Ferramentas</SectionTitle>
+        <ToolLinks hide={['/backup']} />
       </Page>
     </>
   );
@@ -148,10 +152,11 @@ export function GmTablePage({ tableId }: { tableId: string }) {
   const chars = useLive(() => db.remote.where('tableId').equals(tableId).toArray(), [tableId], []);
   const online = useOnline();
   const status = useTablePull(tableId);
+  const [ask, dialog] = useConfirm();
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  if (table === undefined) return <><Header title="MESA" backTo="/" /><Page><p>Carregando…</p></Page></>;
+  if (table === undefined) return <><Header title="MESA" backTo="/" /><Page><Loading /></Page></>;
   if (!table) return <><Header title="MESA" backTo="/" /><Page><Notice tone="bad">Mesa não encontrada neste aparelho.</Notice></Page></>;
 
   const share = async () => {
@@ -181,7 +186,7 @@ export function GmTablePage({ tableId }: { tableId: string }) {
               className="btn"
               disabled={!online}
               onClick={async () => {
-                if (!confirm('Gerar um novo código? O código antigo deixa de funcionar (fichas já vinculadas continuam).')) return;
+                if (!(await ask({ title: 'Gerar novo código?', message: 'O código antigo deixa de funcionar. Fichas já vinculadas continuam na mesa.', confirmLabel: 'Gerar novo código' }))) return;
                 const code = await supabaseRemote.rotateCode(tableId);
                 await db.gmTables.update(tableId, { code });
               }}
@@ -193,19 +198,27 @@ export function GmTablePage({ tableId }: { tableId: string }) {
         </section>
 
         <div className="row">
-          <h2 className="grow">Infectados ({chars.length})</h2>
-          <button className="btn small" disabled={!online} onClick={() => void engine.pullTable(tableId)}>Atualizar</button>
+          <div className="grow">
+            <SectionTitle icon="user">Infectados ({chars.length})</SectionTitle>
+          </div>
+          <Button size="small" icon="sync" disabled={!online} onClick={() => void engine.pullTable(tableId)}>
+            Atualizar
+          </Button>
         </div>
         <p className="muted" role="status">{status}</p>
-        {chars.length === 0 && <Notice tone="info">Nenhuma ficha conectada ainda. Compartilhe o código com os jogadores.</Notice>}
+        {chars.length === 0 && <EmptyState icon="users" title="Nenhuma ficha conectada ainda">Compartilhe o código com os jogadores.</EmptyState>}
         {chars.map((r) => (
           <button key={r.id} className="choice" onClick={() => go(`/gm/${tableId}/${r.id}`)}>
-            <b>{r.data.name || 'Sem nome'}</b>
-            <span>{r.data.occupation}</span>
-            <span>
-              Saúde {healthCurrent(r.data)}/{healthMax(r.data)} · Determinação {determinationAvailable(r.data)}/{r.data.determinationLevel} · Assimilação {assimilationAvailable(r.data)}/{assimilationLevel(r.data)}
+            <span className="choice-icon"><Icon name="user" /></span>
+            <span className="choice-body">
+              <b>{r.data.name || 'Sem nome'}</b>
+              <span>{r.data.occupation}</span>
+              <span>
+                <Icon name="drop" /> Saúde {healthCurrent(r.data)}/{healthMax(r.data)} · Determinação {determinationAvailable(r.data)}/{r.data.determinationLevel} · Assimilação {assimilationAvailable(r.data)}/{assimilationLevel(r.data)}
+              </span>
+              <span>Atualizada {new Date(r.updatedAt).toLocaleString('pt-BR')}</span>
             </span>
-            <span className="muted">Atualizada {new Date(r.updatedAt).toLocaleString('pt-BR')}</span>
+            <Icon name="next" />
           </button>
         ))}
 
@@ -219,7 +232,7 @@ export function GmTablePage({ tableId }: { tableId: string }) {
               className="btn danger"
               disabled={!online}
               onClick={async () => {
-                if (!confirm(`Excluir a mesa “${table.name}”? As fichas dos jogadores continuam com eles, mas você deixa de vê-las.`)) return;
+                if (!(await ask({ title: `Excluir a mesa “${table.name}”?`, message: 'As fichas dos jogadores continuam com eles, mas você deixa de vê-las.', confirmLabel: 'Excluir mesa', tone: 'danger' }))) return;
                 await supabaseRemote.deleteTable(tableId);
                 await db.transaction('rw', db.gmTables, db.remote, async () => {
                   await db.gmTables.delete(tableId);
@@ -233,6 +246,7 @@ export function GmTablePage({ tableId }: { tableId: string }) {
           </div>
         </details>
       </Page>
+      {dialog}
     </>
   );
 }
@@ -241,7 +255,8 @@ export function GmCharacterPage({ tableId, charId }: { tableId: string; charId: 
   const row = useLive(() => db.remote.get(charId).then((r) => r ?? null), [charId], undefined);
   const status = useTablePull(tableId);
   const online = useOnline();
-  if (row === undefined) return <><Header title="FICHA" backTo={`/gm/${tableId}`} /><Page><p>Carregando…</p></Page></>;
+  const [ask, dialog] = useConfirm();
+  if (row === undefined) return <><Header title="FICHA" backTo={`/gm/${tableId}`} /><Page><Loading /></Page></>;
   if (!row) return <><Header title="FICHA" backTo={`/gm/${tableId}`} /><Page><Notice tone="warn">Esta ficha não está mais na mesa.</Notice></Page></>;
   return (
     <>
@@ -254,7 +269,7 @@ export function GmCharacterPage({ tableId, charId }: { tableId: string; charId: 
           className="btn danger"
           disabled={!online}
           onClick={async () => {
-            if (!confirm(`Remover “${row.data.name}” da mesa? Você deixará de ver esta ficha.`)) return;
+            if (!(await ask({ title: `Remover “${row.data.name}” da mesa?`, message: 'Você deixará de ver esta ficha.', confirmLabel: 'Remover', tone: 'danger' }))) return;
             await supabaseRemote.kick(charId);
             await db.remote.delete(charId);
             go(`/gm/${tableId}`);
@@ -263,6 +278,7 @@ export function GmCharacterPage({ tableId, charId }: { tableId: string; charId: 
           Remover da mesa
         </button>
       </Page>
+      {dialog}
     </>
   );
 }

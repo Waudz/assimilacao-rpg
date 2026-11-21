@@ -9,8 +9,11 @@ export async function noHorizontalScroll(page: Page) {
 
 export async function createCharacter(page: Page) {
   await page.goto('./');
-  await page.getByRole('button', { name: /Infectado/ }).click();
-  await page.getByRole('button', { name: '+ Novo Infectado' }).click();
+  const role = page.getByRole('button', { name: /^Infectado/ });
+  const novo = page.getByRole('button', { name: /Novo Infectado/ });
+  await role.or(novo).first().waitFor();
+  if (await role.isVisible()) await role.click(); // primeira abertura: escolher o papel
+  await novo.click();
 
   // 1 Nome
   await page.getByLabel('Nome', { exact: true }).fill('Joaquin Jardim');

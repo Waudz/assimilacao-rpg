@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Header, Notice, Page } from '../components/ui';
+import { Button, Header, Notice, Page } from '../components/ui';
 import { buildBackup, downloadJson, importCharacters, parseBackup } from '../lib/backup';
 
 export function BackupPage() {
@@ -21,12 +21,12 @@ export function BackupPage() {
       <Header title="BACKUP" backTo="/" />
       <Page>
         <p className="muted">O backup é um arquivo JSON com todas as suas fichas. Guarde-o fora do aparelho (e-mail, nuvem). Ele também contém o segredo que permite recuperar suas fichas no servidor em um aparelho novo.</p>
-        <button className="btn primary" onClick={async () => downloadJson(await buildBackup(), `assimilacao-backup-${new Date().toISOString().slice(0, 10)}.json`)}>
+        <Button variant="primary" icon="download" onClick={async () => downloadJson(await buildBackup(), `assimilacao-backup-${new Date().toISOString().slice(0, 10)}.json`)}>
           Exportar todas as fichas
-        </button>
-        <button className="btn" onClick={() => input.current?.click()}>
+        </Button>
+        <Button icon="upload" onClick={() => input.current?.click()}>
           Importar arquivo de backup
-        </button>
+        </Button>
         <input ref={input} type="file" accept="application/json,.json" className="sr-only" aria-label="Arquivo de backup" onChange={(e) => { const f = e.target.files?.[0]; if (f) void doImport(f); e.target.value = ''; }} />
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
         <Notice tone="warn">Trate o arquivo de backup como privado: quem o tiver pode recuperar a posse das suas fichas.</Notice>

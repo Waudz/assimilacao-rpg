@@ -38,3 +38,7 @@ Observação: sem Realtime habilitado na publicação, as atualizações chegam 
 - Validação equivalente feita localmente: o build de produção (`dist/`) servido em **`/assimilacao-rpg/`** (mesmo subcaminho do Pages, `scripts/serve-subpath.mjs`) com `PW_BASE_URL`:
   manifest, ícones (192/512/maskable/apple-touch), `sw.js` e `registerSW.js` respondem 200; `start_url`/`scope` relativos; 16 testes E2E + o fluxo real com Supabase (2 execuções por dispositivo) **passaram** nesse subcaminho.
 - Corrigidos nesta verificação (regressões em `tests/gm-home-race.test.tsx` e `tests/remote.test.ts`): (1) a lista de mesas carregada na abertura podia apagar uma mesa recém-criada ("Mesa não encontrada"); (2) chamadas simultâneas faziam dois logins anônimos, podendo trocar a identidade no meio.
+
+## v2 — interface (branch `feat/ui-v2`)
+Cobertura nova (simulada): `tests/ui.test.tsx` (tradutor: feedback, seleção, desmarcar, totais), `tests/pending-ui.test.tsx` (código antes da ficha, modal de confirmação), `tests/sync.test.ts` (validação do código sem ficha e vínculo automático, offline, erro de rede), `tests/rules.test.ts` (10/0 … 1/9, Estágio Avançado, Resiliente), `e2e/flow.spec.ts` (tradutor e 10/0 em iPhone SE/Pixel 7).
+Via API real: `e2e/real.spec.ts` foi atualizado para o novo fluxo (código informado **antes** de criar o personagem, vínculo automático, modais, limpeza dos dados de teste) e **passou** contra o Supabase real.

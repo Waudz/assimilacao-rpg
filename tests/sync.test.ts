@@ -3,6 +3,7 @@ import { buildBackup, importCharacters, parseBackup } from '../src/lib/backup';
 import { db, deleteCharacter, getCharacter, getSyncMeta, saveCharacter } from '../src/lib/db';
 import { applyDamage, newCharacter, type Character } from '../src/lib/rules';
 import { SyncEngine, syncLabel } from '../src/lib/sync/engine';
+import { clearPendingTable, getPendingTable, setPendingTable } from '../src/lib/pendingTable';
 import type { JoinResult, PushResult, Remote, ServerCharacterRow, ServerTable } from '../src/lib/sync/remote';
 
 /** Servidor em memória com as mesmas regras de permissão do backend SQL (testadas à parte em rls.test.ts). */
@@ -337,5 +338,70 @@ describe('segurança entre jogadores e recuperação', () => {
     await p.leaveTable(c.id);
     await gm.pullTable(t.id);
     expect(await db.remote.get(c.id)).toBeUndefined();
+  });
+});
+
+describe('mesa antes da ficha (mesa pendente)', () => {
+  beforeEach(() => clearPendingTable());
+
+  it('valida o código sem ficha e sem efeito colateral (nada é criado no servidor)', async () => {
+    const e = mk('player');
+    const t = await new FakeRemote(server, 'gm').createTable('Mesa');
+    expect(await e.checkTableCode(t.code)).toEqual({ ok: true });
+    expect(await e.checkTableCode('ZZZZZZZZ')).toMatchObject({ ok: false, error: expect.stringMatching(/Código inválido/) });
+    expect(server.chars.size).toBe(0);
+    online = false;
+    expect(await e.checkTableCode(t.code)).toMatchObject({ ok: false, error: expect.stringMatching(/Sem conexão/) });
+  });
+
+  it('o código fica guardado e a primeira ficha concluída entra na mesa automaticamente', async () => {
+    const e = mk('player');
+    const t = await new FakeRemote(server, 'gm').createTable('Mesa');
+    setPendingTable(t.code);
+    const draft = { ...newCharacter(), name: 'Rascunho' };
+    await db.characters.put(draft);
+    expect((await e.applyPendingTable(draft.id)).status).toBe('waiting'); // rascunho não entra
+    expect(getPendingTable()?.code).toBe(t.code);
+    expect(server.chars.size).toBe(0); // nenhuma ficha vazia criada
+
+    await db.characters.put({ ...draft, status: 'ready' });
+    const r = await e.applyPendingTable(draft.id);
+    expect(r).toEqual({ status: 'joined', tableName: 'Mesa' });
+    expect(getPendingTable()).toBeNull();
+    expect(await getSyncMeta(draft.id)).toMatchObject({ tableName: 'Mesa', state: 'synced' });
+    expect(server.chars.get(draft.id)?.tableId).toBe(t.id);
+    expect((await e.applyPendingTable(draft.id)).status).toBe('none'); // segunda chamada: nada a fazer
+  });
+
+  it('offline mantém a mesa pendente e tenta de novo ao reconectar', async () => {
+    const e = mk('player');
+    const t = await new FakeRemote(server, 'gm').createTable('Mesa');
+    setPendingTable(t.code);
+    const c = await readyChar();
+    online = false;
+    expect((await e.applyPendingTable(c.id)).status).toBe('waiting');
+    expect(getPendingTable()).not.toBeNull();
+    online = true;
+    expect((await e.applyPendingTable(c.id)).status).toBe('joined');
+  });
+
+  it('código que deixou de valer é descartado com aviso; erro de rede mantém pendente', async () => {
+    const e = mk('player');
+    setPendingTable('ZZZZZZZ2');
+    const c = await readyChar();
+    server.failNext = new Error('Failed to fetch');
+    expect((await e.applyPendingTable(c.id)).status).toBe('waiting');
+    expect(getPendingTable()).not.toBeNull();
+    const r = await e.applyPendingTable(c.id);
+    expect(r).toMatchObject({ status: 'failed', error: expect.stringMatching(/Código inválido/) });
+    expect(getPendingTable()).toBeNull();
+  });
+
+  it('não cria personagens: sem ficha, nada muda no aparelho', async () => {
+    const e = mk('player');
+    const t = await new FakeRemote(server, 'gm').createTable('Mesa');
+    await e.checkTableCode(t.code);
+    setPendingTable(t.code);
+    expect(await db.characters.count()).toBe(0);
   });
 });

@@ -247,3 +247,22 @@ describe('rascunho: Assimilação inicial conta para requisitos', () => {
     expect(missingRequirements({ ...draft, initialAssimilation: 1, traits: ['estagio-avancado'] }, TRAIT_BY_ID['resiliente'])).toHaveLength(0);
   });
 });
+
+describe('Cabo de Guerra inicial: 10/0 … 1/9 (pág. 81)', () => {
+  const check = (n: number) => validateStep({ ...newCharacter(), initialAssimilation: n }, 5);
+  it('aceita Assimilação inicial de 0 a 9 (Determinação 10 a 1), incluindo o padrão 9/1', () => {
+    for (let a = 0; a <= 9; a++) expect(check(a), `${10 - a}/${a}`).toEqual([]);
+    expect(newCharacter().initialAssimilation).toBe(1);
+  });
+  it('rejeita valores fora da faixa ou não inteiros', () => {
+    for (const a of [-1, 10, 1.5, NaN]) expect(check(a).length).toBeGreaterThan(0);
+  });
+  it('10/0 resulta em Determinação 10 e Assimilação 0; Estágio Avançado soma +1', () => {
+    const c = { ...newCharacter(), initialAssimilation: 0 };
+    expect(assimilationLevel(c)).toBe(0);
+    expect(assimilationLevel({ ...c, traits: ['estagio-avancado'] })).toBe(1);
+    const ready = { ...c, status: 'ready' as const, determinationLevel: 10 };
+    expect(assimilationLevel(ready)).toBe(0);
+    expect(missingRequirements(ready, TRAIT_BY_ID['resiliente'])).toHaveLength(1); // exige Assimilação 2+
+  });
+});
