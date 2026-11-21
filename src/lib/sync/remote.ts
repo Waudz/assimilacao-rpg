@@ -254,3 +254,23 @@ export async function accountUpdateDisplayName(name: string) {
   fail(error);
   return value;
 }
+
+/** Vínculo independente de ficha: segue a conta entre aparelhos. */
+export interface AccountTable { tableId: string; tableName: string; tableCode: string }
+export async function listAccountTables(): Promise<AccountTable[]> {
+  const user = await accountSession();
+  if (!user) return [];
+  const sb = await getClient();
+  const { data, error } = await sb.rpc('list_my_table_memberships');
+  fail(error);
+  return ((data ?? []) as { table_id: string; table_name: string; table_code: string }[]).map((t) => ({
+    tableId: t.table_id, tableName: t.table_name, tableCode: t.table_code,
+  }));
+}
+export async function joinAccountTable(code: string): Promise<{ ok: boolean; error?: string; tableId?: string; tableName?: string }> {
+  const sb = await getClient();
+  const { data, error } = await sb.rpc('join_table_account', { p_code: code.trim().toUpperCase() });
+  fail(error);
+  const result = data as { ok: boolean; error?: string; table_id?: string; table_name?: string };
+  return { ok: result.ok, error: result.error, tableId: result.table_id, tableName: result.table_name };
+}
