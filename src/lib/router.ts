@@ -19,7 +19,7 @@ export function usePath(): string {
   return path;
 }
 
-export function go(path: string, replace = false) {
+export function toolReturnPath(): string {\n  try {\n    const path = sessionStorage.getItem('assimilacao-tool-return');\n    return path && path.startsWith('/') && !['/dice', '/rules'].includes(path) ? path : '/';\n  } catch { return '/'; }\n}\n\nexport function go(path: string, replace = false) {\n  if ((path === '/dice' || path === '/rules') && currentPath() !== path) {\n    const origin = currentPath();\n    if (origin !== '/dice' && origin !== '/rules') {\n      try { sessionStorage.setItem('assimilacao-tool-return', origin); } catch { /* armazenamento indisponível */ }\n    }\n  }
   if (replace) window.location.replace(`#${path}`);
   else window.location.hash = path;
 }
