@@ -101,7 +101,7 @@ export function SheetPage({ id }: { id: string }) {
 
         <SheetView char={char} update={update} />
 
-        <details className="card sheet-settings" id="sheet-table"><summary>Mesa e sincronização</summary><div className="stack">
+        <details className="card sheet-settings" id="sheet-manage"><summary>Gerenciar personagem</summary><div className="stack"><h2>Mesa e sincronização</h2>
           <h2>Mesa</h2>
           {!syncConfigured ? (
             <Notice tone="info">A sincronização com o Assimilador não está configurada nesta instalação. Sua ficha continua salva e funcionando no aparelho; use o backup JSON para guardar uma cópia.</Notice>
