@@ -339,7 +339,10 @@ function TraitStep({ char, update }: { char: Character; update: Update }) {
 }
 
 function EquipmentStep({ char, update }: { char: Character; update: Update }) {
-  const [extra, setExtra] = useState('');
+  const [extra, setExtra] = useState(() => {
+    const base = new Set(EQUIPMENT_PACKS[char.equipmentPack] ?? []);
+    return char.inventory.filter((i) => !base.has(i.name)).map((i) => i.name).join(String.fromCharCode(10));
+  });
   const pack = useMemo(() => EQUIPMENT_PACKS[char.equipmentPack] ?? [], [char.equipmentPack]);
   return (
     <>

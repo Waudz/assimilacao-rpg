@@ -238,3 +238,12 @@ describe('migração de fichas do protótipo (v1)', () => {
     expect(c.traitNotes).toEqual({});
   });
 });
+
+describe('rascunho: Assimilação inicial conta para requisitos', () => {
+  it('Resiliente fica disponível com Assimilação inicial 2 ou Estágio Avançado (antes de concluir)', () => {
+    const draft = newCharacter();
+    expect(missingRequirements(draft, TRAIT_BY_ID['resiliente'])).toHaveLength(1);
+    expect(missingRequirements({ ...draft, initialAssimilation: 2 }, TRAIT_BY_ID['resiliente'])).toHaveLength(0);
+    expect(missingRequirements({ ...draft, initialAssimilation: 1, traits: ['estagio-avancado'] }, TRAIT_BY_ID['resiliente'])).toHaveLength(0);
+  });
+});

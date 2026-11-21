@@ -107,7 +107,7 @@ export function GmHome({ onSwitchRole }: { onSwitchRole: () => void }) {
 }
 
 export function GmTablePage({ tableId }: { tableId: string }) {
-  const table = useLive(() => db.gmTables.get(tableId), [tableId], undefined);
+  const table = useLive(() => db.gmTables.get(tableId).then((t) => t ?? null), [tableId], undefined);
   const chars = useLive(() => db.remote.where('tableId').equals(tableId).toArray(), [tableId], []);
   const online = useOnline();
   const [status, setStatus] = useState<string>('');
@@ -223,7 +223,7 @@ export function GmTablePage({ tableId }: { tableId: string }) {
 }
 
 export function GmCharacterPage({ tableId, charId }: { tableId: string; charId: string }) {
-  const row = useLive(() => db.remote.get(charId), [charId], undefined);
+  const row = useLive(() => db.remote.get(charId).then((r) => r ?? null), [charId], undefined);
   const online = useOnline();
   if (row === undefined) return <><Header title="FICHA" backTo={`/gm/${tableId}`} /><Page><p>Carregando…</p></Page></>;
   if (!row) return <><Header title="FICHA" backTo={`/gm/${tableId}`} /><Page><Notice tone="warn">Esta ficha não está mais na mesa.</Notice></Page></>;

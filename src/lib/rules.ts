@@ -146,7 +146,9 @@ export function aptitudeByName(c: Character, name: string): number {
 }
 
 // ---------------------------------------------------------------- Cabo de Guerra (pág. 58 e 81)
-export const assimilationLevel = (c: Character) => GAUGE_TOTAL - c.determinationLevel;
+export const assimilationLevel = (c: Character) =>
+  // Durante a criação o nível ainda não foi gravado: vale o inicial + Estágio Avançado.
+  c.status === 'draft' ? clamp(c.initialAssimilation + (c.traits.includes('estagio-avancado') ? 1 : 0), 0, GAUGE_TOTAL) : GAUGE_TOTAL - c.determinationLevel;
 export const determinationAvailable = (c: Character) => Math.max(0, c.determinationLevel - c.determinationSpent);
 export const assimilationAvailable = (c: Character) => Math.max(0, assimilationLevel(c) - c.assimilationSpent);
 

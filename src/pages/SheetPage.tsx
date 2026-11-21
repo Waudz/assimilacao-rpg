@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SheetView } from '../components/SheetView';
 import { Field, Header, Notice, Page } from '../components/ui';
 import { buildBackup, downloadJson } from '../lib/backup';
@@ -15,7 +15,12 @@ export function SheetPage({ id }: { id: string }) {
   const [msg, setMsg] = useState<{ tone: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (char === undefined) return <><Header title="FICHA" backTo="/" /><Page><p>Carregando…</p></Page></>;
+  const isDraft = char?.status === 'draft';
+  useEffect(() => {
+    if (isDraft && char) go(`/create/${char.id}`, true);
+  }, [isDraft, char]);
+
+  if (char === undefined || isDraft) return <><Header title="FICHA" backTo="/" /><Page><p>Carregando…</p></Page></>;
   if (char === null)
     return (
       <>
@@ -26,10 +31,6 @@ export function SheetPage({ id }: { id: string }) {
         </Page>
       </>
     );
-  if (char.status === 'draft') {
-    go(`/create/${char.id}`, true);
-    return null;
-  }
 
   const label = syncLabel(meta, online);
   const saveText = status === 'saving' ? 'Salvando…' : status === 'error' ? 'Falha ao salvar — exporte um backup' : 'Salvo automaticamente neste dispositivo';

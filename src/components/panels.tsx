@@ -297,7 +297,7 @@ export function TraitPicker({
   remainingXp?: number;
 }) {
   const [cost, setCost] = useState<number | 0>(0);
-  const list = TRAITS.filter((t) => !cost || t.cost === cost);
+  const list = TRAITS.filter((t) => (!cost || t.cost === cost) && (enforce || !t.creationOnly || char.traits.includes(t.id)));
   return (
     <div className="stack">
       <div className="seg" role="group" aria-label="Filtrar por custo">

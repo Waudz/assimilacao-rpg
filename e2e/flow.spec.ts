@@ -131,3 +131,23 @@ test('Assimilador sem servidor configurado recebe aviso honesto', async ({ page 
   await expect(page.getByText(/sincronização não está configurada/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /Criar mesa/ })).toBeDisabled();
 });
+
+test('etapa de Aptidões cabe em tela de 320 px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Infectado/ }).click();
+  await page.getByRole('button', { name: '+ Novo Infectado' }).click();
+  await page.getByLabel('Nome', { exact: true }).fill('Estreito');
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.getByLabel('Evento Marcante').fill('a');
+  await page.getByLabel('Ocupação').fill('b');
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.getByRole('radio', { name: /Pós-Colapso/ }).click();
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await page.getByLabel('Propósito Pessoal 1').fill('a');
+  await page.getByLabel('Propósito Pessoal 2').fill('b');
+  await page.getByLabel('Propósito Coletivo').fill('c');
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await expect(page.getByRole('heading', { name: 'Aptidões' })).toBeVisible();
+  await noHorizontalScroll(page);
+});
