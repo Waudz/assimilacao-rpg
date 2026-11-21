@@ -29,6 +29,36 @@ import {
   type Character,
 } from '../lib/rules';
 
+
+// Explicações breves para orientar escolhas sem substituir o livro de regras.
+const HELP: Record<string, string> = {
+  'Geração': 'Define quando o Infectado cresceu em relação ao Colapso. É uma escolha de história e contexto; a criação não concede bônus numérico automático por geração (pág. 78).',
+  'Instintos': 'Representam capacidades básicas do Infectado. Todos começam em 1; distribua três pontos extras, com máximo 3 por Instinto durante a criação (pág. 80).',
+  'Conhecimentos': 'Representam saberes aprendidos, como medicina, engenharia e geografia. Compartilham sete pontos de criação com as Práticas (pág. 80).',
+  'Práticas': 'Representam habilidades aplicadas, como atletismo, furtividade e sobrevivência. Compartilham os mesmos sete pontos dos Conhecimentos (pág. 80).',
+  'Influência': 'Capacidade de afetar as decisões e reações de outras pessoas em interações sociais.',
+  'Percepção': 'Capacidade de notar sinais, detalhes e mudanças no ambiente.',
+  'Potência': 'Capacidade física relacionada a força e esforço corporal; também participa do cálculo da Saúde.',
+  'Reação': 'Capacidade de responder rapidamente a acontecimentos e ameaças.',
+  'Resolução': 'Capacidade de suportar adversidades e manter-se firme; também participa do cálculo da Saúde.',
+  'Sagacidade': 'Capacidade de raciocinar, interpretar situações e encontrar soluções.',
+  'Biologia': 'Conhecimento sobre organismos e processos biológicos.',
+  'Erudição': 'Conhecimento teórico, histórico e cultural.',
+  'Engenharia': 'Conhecimento de mecanismos, estruturas e soluções técnicas.',
+  'Geografia': 'Conhecimento sobre terrenos, regiões e orientação espacial.',
+  'Medicina': 'Conhecimento sobre cuidados de saúde, lesões e tratamentos.',
+  'Segurança': 'Conhecimento sobre procedimentos, riscos e sistemas de proteção.',
+  'Armas': 'Prática no manejo e uso de armamentos.',
+  'Atletismo': 'Prática de movimentos e esforços físicos.',
+  'Expressão': 'Prática de comunicação e expressão pessoal.',
+  'Furtividade': 'Prática de agir sem chamar atenção.',
+  'Manufaturas': 'Prática de construir, reparar e produzir objetos.',
+  'Sobrevivência': 'Prática de lidar com ambientes hostis e recursos limitados.',
+};
+function Help({ name }: { name: string }) {
+  return <details className="apt-help"><summary aria-label={`Explicar ${name}`} title={`O que é ${name}?`}>i</summary><p>{HELP[name]}</p></details>;
+}
+
 const hasEstagio = (c: Character) => c.traits.includes('estagio-avancado');
 
 export function xpSpent(c: Character) {
@@ -146,7 +176,7 @@ function StepBody({ step, char, update }: { step: number; char: Character; updat
     case 2:
       return (
         <>
-          <p className="muted">Quando o seu Infectado nasceu, em relação ao Colapso (pág. 78). O Assimilador indica em que ponto da cronologia a campanha se passa.</p>
+          <p className="muted">Quando o seu Infectado nasceu, em relação ao Colapso (pág. 78). O Assimilador indica em que ponto da cronologia a campanha se passa. <Help name="Geração" /></p>
           <div className="stack" role="radiogroup" aria-label="Geração">
             {GENERATIONS.map((g) => (
               <button key={g.id} role="radio" aria-checked={char.generation === g.id} className="choice" style={char.generation === g.id ? { background: 'var(--color-instinct)', color: '#fff8ea' } : undefined} onClick={() => update({ generation: g.id })}>
@@ -194,7 +224,7 @@ function AptitudeStep({ char, update }: { char: Character; update: Update }) {
   const setS = (i: number, v: number) => update({ skills: char.skills.map((x, k) => (k === i ? v : x)) });
   const row = (name: string, base: number, diamond: boolean, ctl: React.ReactNode) => (
     <div className="apt" key={name}>
-      <span className="name">{name}</span>
+      <span className="name">{name} <Help name={name} /></span>
       <Pips base={base} diamond={diamond} />
       {ctl}
     </div>
@@ -204,7 +234,7 @@ function AptitudeStep({ char, update }: { char: Character; update: Update }) {
       <p className="muted">Cada Instinto começa com 1 e você distribui mais 3 pontos (máx. {INSTINCT_CREATION_MAX} por Instinto). Conhecimentos e Práticas: {SKILL_POINTS} pontos, máx. {SKILL_CREATION_MAX} em cada (pág. 80).</p>
       <section className="card">
         <div className="group-head instinct">
-          <span>Instintos</span>
+          <span>Instintos <Help name="Instintos" /></span>
           <span aria-live="polite">{iUsed}/{INSTINCT_FREE_POINTS} pontos livres usados</span>
         </div>
         <div className="grid3 edit">
@@ -213,14 +243,14 @@ function AptitudeStep({ char, update }: { char: Character; update: Update }) {
       </section>
       <section className="card">
         <div className="group-head skill">
-          <span>Conhecimentos</span>
+          <span>Conhecimentos <Help name="Conhecimentos" /></span>
           <span aria-live="polite">{sUsed}/{SKILL_POINTS} pontos</span>
         </div>
         <div className="grid3 edit">
           {KNOWLEDGE.map((n, i) => row(n, char.skills[i], true, <NumStepper label={n} value={char.skills[i]} min={0} max={Math.min(SKILL_CREATION_MAX, char.skills[i] + (SKILL_POINTS - sUsed))} onChange={(v) => setS(i, v)} />))}
         </div>
         <div className="group-head skill">
-          <span>Práticas</span>
+          <span>Práticas <Help name="Práticas" /></span>
         </div>
         <div className="grid3 edit">
           {PRACTICES.map((n, i) => row(n, char.skills[6 + i], true, <NumStepper label={n} value={char.skills[6 + i]} min={0} max={Math.min(SKILL_CREATION_MAX, char.skills[6 + i] + (SKILL_POINTS - sUsed))} onChange={(v) => setS(6 + i, v)} />))}
