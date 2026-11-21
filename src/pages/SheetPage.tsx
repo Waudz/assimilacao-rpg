@@ -101,8 +101,8 @@ export function SheetPage({ id }: { id: string }) {
 
         <SheetView char={char} update={update} />
 
-        <details className="card sheet-settings" id="sheet-manage"><summary>Gerenciar personagem</summary><div className="stack"><h2>Mesa e sincronização</h2>
-          <h2>Mesa</h2>
+        <details className="card sheet-settings" id="sheet-manage"><summary>Gerenciar personagem</summary><div className="stack">
+          <h2>Mesa e sincronização</h2>
           {!syncConfigured ? (
             <Notice tone="info">A sincronização com o Assimilador não está configurada nesta instalação. Sua ficha continua salva e funcionando no aparelho; use o backup JSON para guardar uma cópia.</Notice>
           ) : meta?.tableId ? (
@@ -144,39 +144,12 @@ export function SheetPage({ id }: { id: string }) {
             </>
           )}
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
-        </div></details>
-
-        <details className="card sheet-settings" id="sheet-backup"><summary>Backup e exclusão</summary><div className="stack">
+        </div><div className="stack sheet-manage-backup"><h2>Backup</h2>
           <button className="btn" onClick={async () => downloadJson(await buildBackup(char.id), `assimilacao-${(char.name || 'ficha').replace(/\W+/g, '-')}.json`)}>
             Exportar esta ficha (JSON)
           </button>
-          <button
-            className="btn danger"
-            onClick={async () => {
-              if (!(await ask({ title: `Excluir “${char.name}”?`, message: 'A ficha será apagada deste aparelho (e do servidor, se estiver numa mesa). Exporte um backup antes se quiser guardá-la.', confirmLabel: 'Excluir ficha', tone: 'danger' }))) return;
-              if (meta?.tableId) {
-                try {
-                  await supabaseRemote.deleteCharacter(char.id);
-                } catch {
-                  /* sem conexão: apenas local */
-                }
-              }
-              await deleteCharacter(char.id);
-              go('/');
-            }}
-          >
-            Excluir ficha
-          </button>
-        </div></details>
-      </Page>
-      {dialog}
-    </>
-  );
-}<div className="stack sheet-manage-backup"><h2>Backup</h2>
-          <button className="btn" onClick={async () => downloadJson(await buildBackup(char.id), `assimilacao-${(char.name || 'ficha').replace(/\W+/g, '-')}.json`)}>
-            Exportar esta ficha (JSON)
-          </button></div></details>
-<div className="sheet-delete-action">
+</div></details>
+        <div className="sheet-delete-action">
           <button
             className="btn danger"
             onClick={async () => {
