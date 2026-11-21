@@ -94,6 +94,7 @@ export function finalizeCharacter(c: Character): Character {
 export function CreatePage({ id }: { id: string }) {
   const { char, update, flush } = useCharacterEditor(id);
   const [errors, setErrors] = useState<string[]>([]);
+  const [showReview, setShowReview] = useState(false);
   const [ask, dialog] = useConfirm();
   const [cancelling, setCancelling] = useState(false);
 
@@ -122,15 +123,16 @@ export function CreatePage({ id }: { id: string }) {
   const setStep = (s: number) => update({ step: s });
   const last = step === STEPS.length - 1;
 
+  const pendingSteps = STEPS.map((label, index) => ({ label, index, errors: validateStep(char, index, xpSpent(char)) })).filter((item) => item.errors.length > 0);
+  const extraValidation = validateAll(char);
   const next = () => {
-    const e = validateStep(char, step, xpSpent(char));
-    if (e.length) return setErrors(e);
     setErrors([]);
-    if (!last) return setStep(step + 1);
-    const all = validateAll(char);
-    if (all) {
-      setErrors(all.errors);
-      setStep(all.step);
+    if (!last) {
+      setShowReview(false);
+      return setStep(step + 1);
+    }
+    if (pendingSteps.length || extraValidation) {
+      setShowReview(true);
       return;
     }
     bindPendingTable(char.id);
@@ -157,7 +159,19 @@ export function CreatePage({ id }: { id: string }) {
           </Notice>
         )}
         <StepBody step={step} char={char} update={update} />
-        <p className="muted">Salvo automaticamente neste dispositivo. Você pode sair e continuar depois.</p>
+        {last && showReview && pendingSteps.length > 0 && (
+          <section className="card stack" role="alert">
+            <h2>Antes de concluir, faltam algumas escolhas</h2>
+            <p className="muted">Você pode preencher as etapas em qualquer ordem. Seu rascunho está salvo e nada será perdido.</p>
+            {pendingSteps.map(({ label, index, errors: missing }) => (
+              <div key={index}>
+                <button type="button" className="btn" onClick={() => { setStep(index); setShowReview(false); }}>Ir para etapa {index + 1}: {label}</button>
+                <ul>{missing.map((message) => <li key={message}>{message}</li>)}</ul>
+              </div>
+            ))}
+          </section>
+        )}
+        <p className="muted">Salvo automaticamente neste dispositivo. Você pode avançar sem preencher tudo; ao concluir, verá o que falta.</p>
         <button type="button" className="btn danger" disabled={cancelling} onClick={() => void cancelCreation()}>{cancelling ? 'Excluindo…' : 'Cancelar criação e excluir rascunho'}</button>
       </Page>
       <div style={{ height: 70 }} />
