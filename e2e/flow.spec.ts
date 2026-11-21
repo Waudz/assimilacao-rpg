@@ -89,10 +89,10 @@ test('Cabo de Guerra inicial 10/0 (Determinação 10, Assimilação 0) vai para 
   for (const apt of ['Biologia', 'Geografia', 'Armas']) await page.getByRole('button', { name: `Aumentar ${apt}`, exact: true }).click({ clickCount: 2, delay: 30 });
   await page.getByRole('button', { name: 'Aumentar Furtividade', exact: true }).click();
   await page.getByRole('button', { name: 'Próximo' }).click(); // Cabo de Guerra
-  // opções 10/0 … 1/9 disponíveis; padrão 9/1 selecionado
-  await expect(page.getByRole('radio', { name: 'Determinação 9, Assimilação 1' })).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByRole('radio')).toHaveCount(10);
-  await page.getByRole('radio', { name: 'Determinação 10, Assimilação 0' }).click();
+  // escala de 10 posições: seleção acessível por botão pressionado
+  await expect(page.getByRole('button', { name: 'Determinação 9, Assimilação 1' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Determinação 10, Assimilação 0' }).click();
+  await expect(page.getByRole('button', { name: 'Determinação 10, Assimilação 0' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Próximo' }).click(); // Saúde
   await page.getByRole('button', { name: 'Próximo' }).click(); // Características
   await page.getByRole('button', { name: 'Próximo' }).click(); // Equipamentos
