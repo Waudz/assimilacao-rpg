@@ -106,9 +106,9 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
   useEffect(() => { if (syncConfigured) void accountSession().then((u) => setHasAccount(Boolean(u))).catch(() => {}); }, []);
   const metas = useLive(() => db.sync.toArray(), [], []);
   const online = useOnline();
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [selectedTable, setSelectedTable] = useState<string>('all');
   const groups = Array.from(new Map(metas.filter((m) => m.tableId && chars.some((c) => c.id === m.id)).map((m) => [m.tableId!, { id: m.tableId!, name: m.tableName || 'Mesa' }])).values());
-  const visibleChars = selectedTable === null ? chars.filter((c) => !metas.some((m) => m.id === c.id && m.tableId)) : chars.filter((c) => metas.some((m) => m.id === c.id && m.tableId === selectedTable));
+  const visibleChars = selectedTable === 'all' ? chars : selectedTable === 'none' ? chars.filter((c) => !metas.some((m) => m.id === c.id && m.tableId)) : chars.filter((c) => metas.some((m) => m.id === c.id && m.tableId === selectedTable));
 
   const create = async () => {
     const c = newCharacter();
@@ -132,13 +132,14 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
             <h2><Icon name="users" /> Mesas</h2>
             <div className="row wrap">
               {groups.map((g) => <button key={g.id} type="button" className={selectedTable === g.id ? 'btn primary small' : 'btn small'} aria-pressed={selectedTable === g.id} onClick={() => setSelectedTable(g.id)}>{g.name}</button>)}
-              <button type="button" className={selectedTable === null ? 'btn primary small' : 'btn small'} aria-pressed={selectedTable === null} onClick={() => setSelectedTable(null)}>Sem mesa</button>
+              <button type="button" className={selectedTable === 'all' ? 'btn primary small' : 'btn small'} aria-pressed={selectedTable === 'all'} onClick={() => setSelectedTable('all')}>Todas</button>
+              <button type="button" className={selectedTable === 'none' ? 'btn primary small' : 'btn small'} aria-pressed={selectedTable === 'none'} onClick={() => setSelectedTable('none')}>Sem mesa</button>
             </div>
           </section>
         )}
-        <SectionTitle icon="user">{selectedTable ? 'Fichas da mesa' : 'Fichas sem mesa'}</SectionTitle>
+        <SectionTitle icon="user">{selectedTable === 'all' ? 'Todos os Infectados' : selectedTable === 'none' ? 'Fichas sem mesa' : 'Fichas da mesa'}</SectionTitle>
         {visibleChars.length === 0 && (
-          <EmptyState icon="scroll" title={selectedTable ? "Nenhuma ficha nesta mesa" : "Nenhuma ficha sem mesa"}>
+          <EmptyState icon="scroll" title={selectedTable === "all" ? "Nenhuma ficha encontrada" : selectedTable === "none" ? "Nenhuma ficha sem mesa" : "Nenhuma ficha nesta mesa"}>
             Crie seu primeiro Infectado ou importe um backup.
           </EmptyState>
         )}
