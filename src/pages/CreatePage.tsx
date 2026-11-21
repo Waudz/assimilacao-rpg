@@ -323,18 +323,18 @@ function TraitStep({ char, update }: { char: Character; update: Update }) {
         </div>
       </div>
       <h2>Melhorar Conhecimentos e Práticas</h2>
-      <div className="stack">
+      <div className="stack xp-skills">
         {skillNames.map((n, i) => {
           const lvl = char.skills[i] + char.skillUps[i];
           return (
-            <div className="row card" key={n} style={{ padding: 8 }}>
-              <span className="grow">
+            <div className="xp-skill-row" key={n}>
+              <span className="xp-skill-name">
                 {n} <b>{lvl}</b>
               </span>
-              <button className="btn small" aria-label={`Reduzir melhoria de ${n}`} disabled={char.skillUps[i] === 0} onClick={() => ups(i, -1)}>
+              <button className="btn small xp-skill-action" aria-label={`Reduzir melhoria de ${n}`} disabled={char.skillUps[i] === 0} onClick={() => ups(i, -1)}>
                 −
               </button>
-              <button className="btn small" aria-label={`Melhorar ${n} para ${lvl + 1} (custa ${upgradeCost(lvl + 1)})`} disabled={lvl >= 5 || upgradeCost(lvl + 1) > remaining} onClick={() => ups(i, 1)}>
+              <button className="btn small xp-skill-action" aria-label={`Melhorar ${n} para ${lvl + 1} (custa ${upgradeCost(lvl + 1)})`} disabled={lvl >= 5 || upgradeCost(lvl + 1) > remaining} onClick={() => ups(i, 1)}>
                 +1 ({upgradeCost(lvl + 1)})
               </button>
             </div>
