@@ -245,7 +245,7 @@ function GaugeStep({ char, update }: { char: Character; update: Update }) {
             <div><span>Assimilação</span><strong>{assim}</strong></div>
           </div>
           <div className="cabo-guerra-track" role="group" aria-label="Escolher distribuição dos dez pontos">
-            {Array.from({ length: 11 }, (_, a) => (
+            {Array.from({ length: 10 }, (_, a) => (
               <button
                 key={a}
                 type="button"
@@ -256,7 +256,7 @@ function GaugeStep({ char, update }: { char: Character; update: Update }) {
               ><span aria-hidden="true" /></button>
             ))}
           </div>
-          <div className="cabo-guerra-ends"><span>10 / 0</span><span>0 / 10</span></div>
+          <div className="cabo-guerra-ends"><span>10 / 0</span><span>1 / 9</span></div>
           <p className="muted">Toque na escala para distribuir os 10 pontos. Cada ponto de Assimilação reduz 1 de Determinação; nunca ultrapassa 10 no total.</p>
           <p className="muted">Distribuição recomendada: 9/1. Também é possível começar em 10/0.</p>
         </div>
