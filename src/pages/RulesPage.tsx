@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { toolReturnPath } from '../lib/router';\nimport { useState } from 'react';
 import { Header, Page } from '../components/ui';
 import { go } from '../lib/router';
 
@@ -67,7 +67,7 @@ export function RulesPage() {
   const list = RULES.filter((r) => (r.title + r.body.join(' ')).toLowerCase().includes(q.toLowerCase()));
   return (
     <>
-      <Header title="REGRAS RÁPIDAS" backTo="/" />
+      <Header title="REGRAS RÁPIDAS" backTo={toolReturnPath()} />
       <Page>
         <section className="card rules-intro">
           <h2>Primeira vez jogando?</h2>
