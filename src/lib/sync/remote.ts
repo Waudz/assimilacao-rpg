@@ -178,7 +178,7 @@ export const supabaseRemote: Remote = {
   },
   async listOwn() {
     const sb = await getClient();
-    const { data, error } = await sb.from('characters').select(COLS).order('updated_at', { ascending: false });
+    const { data, error } = await sb.from('characters').select(COLS).eq('owner_id', (await accountSession())!.id).order('updated_at', { ascending: false });
     fail(error);
     return ((data ?? []) as Row[]).map(toRow);
   },
