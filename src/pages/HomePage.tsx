@@ -185,8 +185,9 @@ export function RolePage({ onChoose }: { onChoose: (r: 'player' | 'gm') => void 
         <div className="hero">
           <Mark />
           <h1>Como você vai participar?</h1>
-          <p className="muted">Sem cadastro. Você pode trocar de papel depois.</p>
+          <p className="muted">Você pode jogar sem cadastro. Entre na sua conta para salvar e sincronizar fichas entre dispositivos.</p>
         </div>
+        <Button variant="primary" block icon="user" onClick={() => go('/account')}>Entrar ou criar conta</Button>
         <button
           className="choice"
           onClick={() => {
