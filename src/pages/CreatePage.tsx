@@ -239,37 +239,26 @@ function GaugeStep({ char, update }: { char: Character; update: Update }) {
       </p>
       <div className="card">
         <p className="muted">Escolha o par Determinação / Assimilação definido pelo Assimilador:</p>
-        <div className="grid3" role="radiogroup" aria-label="Determinação e Assimilação iniciais">
-          {Array.from({ length: 10 }, (_, a) => a).map((a) => {
-            const on = char.initialAssimilation === a;
-            return (
+        <div className="cabo-guerra" aria-label="Cabo de Guerra: Determinação e Assimilação, total de dez pontos">
+          <div className="cabo-guerra-head">
+            <div><span>Determinação</span><strong>{10 - assim}</strong></div>
+            <div><span>Assimilação</span><strong>{assim}</strong></div>
+          </div>
+          <div className="cabo-guerra-track" role="group" aria-label="Escolher distribuição dos dez pontos">
+            {Array.from({ length: 11 }, (_, a) => (
               <button
                 key={a}
                 type="button"
-                role="radio"
-                aria-checked={on}
+                className={`cabo-guerra-point${a <= char.initialAssimilation ? ' assimilated' : ' determined'}${a === char.initialAssimilation ? ' active' : ''}`}
                 aria-label={`Determinação ${10 - a}, Assimilação ${a}`}
-                className={`choice${on ? ' selected' : ''}`}
-                style={{ minHeight: 56, justifyContent: 'center', padding: 8 }}
+                aria-pressed={char.initialAssimilation === a}
                 onClick={() => update({ initialAssimilation: a })}
-              >
-                <b style={{ fontSize: '1.3rem' }}>
-                  {10 - a}/{a}
-                </b>
-              </button>
-            );
-          })}
-        </div>
-        <p className="muted">Padrão recomendado: 9/1. 10/0 começa sem nenhum nível de Assimilação.</p>
-        <div className="grid2">
-          <div className="stack" style={{ alignItems: 'center' }}>
-            <span className="muted">Determinação</span>
-            <span className="big-num" style={{ color: 'var(--color-det)' }}>{10 - assim}</span>
+              ><span aria-hidden="true" /></button>
+            ))}
           </div>
-          <div className="stack" style={{ alignItems: 'center' }}>
-            <span className="muted">Assimilação</span>
-            <span className="big-num" style={{ color: 'var(--color-assim)' }}>{assim}</span>
-          </div>
+          <div className="cabo-guerra-ends"><span>10 / 0</span><span>0 / 10</span></div>
+          <p className="muted">Toque na escala para distribuir os 10 pontos. Cada ponto de Assimilação reduz 1 de Determinação; nunca ultrapassa 10 no total.</p>
+          <p className="muted">Distribuição recomendada: 9/1. Também é possível começar em 10/0.</p>
         </div>
         {hasEstagio(char) && <Notice tone="info">Estágio Avançado soma +1 de Assimilação inicial (com aprovação do Assimilador).</Notice>}
         {char.initialAssimilation > 1 && <Notice tone="warn">Se começar com níveis de Assimilação, o livro pede um Teste de Assimilação para definir as mutações (pág. 81 e 124). Anote o resultado em Características.</Notice>}
