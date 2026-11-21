@@ -217,7 +217,7 @@ export async function accountSession() {
   const sb = await getClient();
   const { data, error } = await sb.auth.getUser();
   fail(error);
-  return data.user?.email ? { id: data.user.id, email: data.user.email } : null;
+  return data.user?.email ? { id: data.user.id, email: data.user.email, displayName: typeof data.user.user_metadata?.assimilacao_display_name === 'string' ? data.user.user_metadata.assimilacao_display_name : '' } : null;
 }
 export async function accountSignUp(email: string, password: string) {
   const sb = await getClient();
@@ -243,4 +243,14 @@ export async function accountUpdatePassword(password: string) {
   const sb = await getClient();
   const { error } = await sb.auth.updateUser({ password });
   fail(error);
+}
+
+/** Nome público exclusivo do Assimilação; não modifica o perfil do outro aplicativo. */
+export async function accountUpdateDisplayName(name: string) {
+  const value = name.trim().replace(/\s+/g, ' ');
+  if (value.length < 2 || value.length > 60) throw new Error('O nome deve ter entre 2 e 60 caracteres.');
+  const sb = await getClient();
+  const { error } = await sb.auth.updateUser({ data: { assimilacao_display_name: value } });
+  fail(error);
+  return value;
 }
