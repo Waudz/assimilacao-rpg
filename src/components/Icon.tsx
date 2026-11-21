@@ -1,3 +1,4 @@
+import { AssimilacaoMark } from './BrandAssets';
 // Conjunto único de ícones (SVG inline, traço 1.75, 24×24). Sem biblioteca externa.
 const PATHS = {
   home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
@@ -44,11 +45,5 @@ export function Icon({ name, className = '', title }: { name: IconName; classNam
 
 /** Marca do aplicativo (traço vinho + linha e ponto em azul-petróleo), igual ao ícone do PWA. */
 export function Mark({ className = '' }: { className?: string }) {
-  return (
-    <svg className={`mark ${className}`.trim()} viewBox="0 0 192 192" aria-hidden="true">
-      <path d="M44 142L94 45h23L68 142z" fill="#6e2420" />
-      <path d="M84 111h68" stroke="#1d6468" strokeWidth="14" strokeLinecap="round" />
-      <circle cx="151" cy="54" r="9" fill="#1d6468" />
-    </svg>
-  );
+  return <AssimilacaoMark className={`mark ${className}`.trim()} />;
 }
