@@ -1211,3 +1211,13 @@ Painel do Assimilador: visão rápida, somente leitura, sem ocupar espaço com a
 .sheet-settings[open] { position:fixed; z-index:100; top:50%; left:50%; transform:translate(-50%,-50%); width:min(92vw,560px); max-height:min(85dvh,760px); overflow-y:auto; background:var(--color-card); border:2px solid var(--color-instinct); box-shadow:0 0 0 100vmax rgba(32,25,18,.62),0 18px 50px rgba(32,25,18,.35); }
 .sheet-settings[open] > summary { position:sticky; top:0; z-index:1; background:var(--color-card); border-bottom:1px solid var(--color-line); }
 .sheet-settings[open] > summary::after { content:' ×  Fechar'; float:right; font:600 .85rem system-ui,sans-serif; color:var(--color-wine); text-transform:none; }
+
+/* Mesmas dimensões, tipografia e cores para todos os atalhos do cabeçalho. */
+.header-actions > .header-tool { border:0; background:transparent; box-shadow:none; font:600 .75rem system-ui,sans-serif; color:var(--color-wine); }
+.header-actions > .header-tool:hover { background:var(--color-paper-2); }
+/* Os três símbolos da tradução usam suas cores próprias também nas bordas e números. */
+.total.success,.symchip.success { border-color:#c34b43; color:#a83e37; }
+.total.adapt,.symchip.adapt { border-color:#a69a39; color:#857a25; }
+.total.pressure,.symchip.pressure { border-color:#298b94; color:#236f78; }
+.total.zero { opacity:.8; }
+.total.zero .n { opacity:.7; }
