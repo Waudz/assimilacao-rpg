@@ -34,7 +34,8 @@ export function AccountPage() {
         await accountSignIn(email.trim(), password);
         setUser(await accountSession());
         engine.schedule(0);
-        go('/');
+        const next = new URLSearchParams(window.location.search).get('next');
+        go(next === 'table' ? '/' : '/');
       }
     } catch (e) { setError(friendlyError(e)); }
     finally { setBusy(false); }
