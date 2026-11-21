@@ -179,6 +179,8 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
 }
 
 export function RolePage({ onChoose }: { onChoose: (r: 'player' | 'gm') => void }) {
+  const [account, setAccount] = useState<{ email: string } | null>(null);
+  useEffect(() => { if (syncConfigured) void accountSession().then((user) => setAccount(user)).catch(() => {}); }, []);
   return (
     <>
       <Header />
@@ -186,9 +188,9 @@ export function RolePage({ onChoose }: { onChoose: (r: 'player' | 'gm') => void 
         <div className="hero">
           <Mark />
           <h1>Como você vai participar?</h1>
-          <p className="muted">Você pode jogar sem cadastro. Entre na sua conta para salvar e sincronizar fichas entre dispositivos.</p>
+          <p className="muted">{account ? `Conectado como ${account.email}. Escolha como deseja participar.` : 'Você pode jogar sem cadastro. Entre na sua conta para salvar e sincronizar fichas entre dispositivos.'}</p>
         </div>
-        <Button variant="primary" block icon="user" onClick={() => go('/account')}>Entrar ou criar conta</Button>
+        <Button variant="primary" block icon="user" onClick={() => go('/account')}>{account ? 'Minha conta' : 'Entrar ou criar conta'}</Button>
         <button
           className="choice"
           onClick={() => {
