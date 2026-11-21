@@ -69,7 +69,7 @@ export function GmHome({ onSwitchRole }: { onSwitchRole: () => void }) {
 
   return (
     <>
-      <Header title="ASSIMILADOR" right={<button type="button" className="header-tool" onClick={onSwitchRole} aria-label="Trocar papel"><Icon name="swap" /><span>Trocar papel</span></button>} />
+      <Header title="ASSIMILADOR" />
       <Page>
         {!syncConfigured && <Notice tone="warn">A sincronização não está configurada nesta instalação (faltam as variáveis do Supabase). Criar mesas não está disponível. O tradutor de dados e as regras rápidas funcionam normalmente.</Notice>}
         <SectionTitle icon="users">Minhas mesas</SectionTitle>

@@ -31,6 +31,11 @@ export function App() {
     go('/', true);
   };
 
+  useEffect(() => {
+    window.addEventListener('app-switch-role', switchRole);
+    return () => window.removeEventListener('app-switch-role', switchRole);
+  });
+
   let page: React.ReactNode;
   let m: Record<string, string> | null;
   if (!role) page = <RolePage onChoose={choose} />;
