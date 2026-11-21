@@ -1,3 +1,4 @@
+import { syncAccount } from './account';
 // Motor de sincronização offline-first.
 // - A ficha sempre é salva primeiro no aparelho (Dexie). Só fichas vinculadas a uma mesa são enviadas ao servidor.
 // - Alterações pendentes ficam marcadas (`SyncMeta.dirty`) e são reenviadas quando há conexão: ao voltar online,
@@ -77,6 +78,7 @@ export class SyncEngine {
         this.rerun = false;
         // Recomeça a vinculação pendente mesmo se o jogador reabrir na Home,
         // sem depender de manter a ficha aberta. O destino foi fixado na conclusão.
+        try { await syncAccount((id) => this.pushOne(id)); } catch { /* offline: retry on next tick */ }
         const pending = getPendingTable();
         if (pending?.characterId) await this.applyPendingTable(pending.characterId);
         const metas = await db.sync.filter((m) => m.dirty && Boolean(m.tableId) && m.state !== 'conflict').toArray();

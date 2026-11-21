@@ -32,6 +32,7 @@ export interface Remote {
   listTables(): Promise<ServerTable[]>;
   listTableCharacters(tableId: string): Promise<ServerCharacterRow[]>;
   getOwn(characterId: string): Promise<ServerCharacterRow | null>;
+  listOwn?(): Promise<ServerCharacterRow[]>;
   /** Chama `onChange` quando houver alterações em fichas da mesa. Retorna função de cancelamento. */
   subscribe(tableId: string, onChange: () => void): () => void;
 }
@@ -175,6 +176,12 @@ export const supabaseRemote: Remote = {
     fail(error);
     return data ? toRow(data as Row) : null;
   },
+  async listOwn() {
+    const sb = await getClient();
+    const { data, error } = await sb.from('characters').select(COLS).eq('owner_id', (await accountSession())!.id).order('updated_at', { ascending: false });
+    fail(error);
+    return ((data ?? []) as Row[]).map(toRow);
+  },
   subscribe(tableId, onChange) {
     let channel: ReturnType<Client['channel']> | null = null;
     let cancelled = false;
@@ -204,3 +211,36 @@ export function friendlyError(e: unknown): string {
 }
 
 export const isNetworkError = (e: unknown) => /failed to fetch|network|load failed|not_configured/i.test(e instanceof Error ? e.message : String(e));
+
+/** Contas permanentes usam o mesmo cliente da sincronização por mesa. */
+export async function accountSession() {
+  const sb = await getClient();
+  const { data, error } = await sb.auth.getUser();
+  fail(error);
+  return data.user?.email ? { id: data.user.id, email: data.user.email } : null;
+}
+export async function accountSignUp(email: string, password: string) {
+  const sb = await getClient();
+  const { error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
+  fail(error);
+}
+export async function accountSignIn(email: string, password: string) {
+  const sb = await getClient();
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  fail(error);
+}
+export async function accountSignOut() {
+  const sb = await getClient();
+  const { error } = await sb.auth.signOut();
+  fail(error);
+}
+export async function accountResetPassword(email: string) {
+  const sb = await getClient();
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+  fail(error);
+}
+export async function accountUpdatePassword(password: string) {
+  const sb = await getClient();
+  const { error } = await sb.auth.updateUser({ password });
+  fail(error);
+}

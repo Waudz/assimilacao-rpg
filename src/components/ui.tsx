@@ -43,6 +43,7 @@ export function Header({ title, backTo, right }: { title?: string; backTo?: stri
           <div className="header-menu" onClick={(e) => closeMenu(e.target)}>
             {isSheet && <button type="button" onClick={openSheetManagement}><Icon name="users" /> Gerenciar personagem</button>}
             {isGmTable && <button type="button" onClick={() => document.querySelector<HTMLElement>('.gm-table-admin > summary')?.click()}><Icon name="users" /> Gerenciar mesa</button>}
+            <button type="button" onClick={() => go('/account')}><Icon name="user" /> Minha conta</button>
             {!isSheet && <button type="button" onClick={() => go('/backup')}><Icon name="download" /> Backup e importação</button>}
             <button type="button" onClick={() => window.dispatchEvent(new Event('app-switch-role'))}><Icon name="swap" /> Trocar papel</button>
             {path !== '/' && <button type="button" onClick={() => go('/')}><Icon name="home" /> Início</button>}

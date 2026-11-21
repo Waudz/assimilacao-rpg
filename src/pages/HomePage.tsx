@@ -7,6 +7,7 @@ import { clearPendingTable, getPendingTable, normalizeCode, setPendingTable, typ
 import { go } from '../lib/router';
 import { GENERATIONS, STEPS, healthCurrent, healthMax, newCharacter } from '../lib/rules';
 import { engine, syncConfigured, syncLabel } from '../lib/sync';
+import { accountSession } from '../lib/sync/remote';
 
 export function ToolLinks({ hide = [] }: { hide?: string[] }) {
   const tiles: { to: string; icon: IconName; title: string; hint: string }[] = [
@@ -74,7 +75,7 @@ function TableCodeCard() {
 
   return (
     <Card title="Entrar em uma mesa" icon="users">
-      <p className="muted">Já tem o código do Assimilador? Informe agora; seu personagem será vinculado quando estiver pronto.</p>
+      <p className="muted">Entre em uma mesa com o código do Assimilador, mesmo sem conta. Para recuperar e sincronizar suas fichas em outros dispositivos, crie uma conta por e-mail.</p>
       <Field label="Código da mesa">
         <input
           value={code}
@@ -101,6 +102,8 @@ function TableCodeCard() {
 
 export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
   const chars = useLive(listCharacters, [], []);
+  const [hasAccount, setHasAccount] = useState<boolean | null>(null);
+  useEffect(() => { if (syncConfigured) void accountSession().then((u) => setHasAccount(Boolean(u))).catch(() => {}); }, []);
   const metas = useLive(() => db.sync.toArray(), [], []);
   const online = useOnline();
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -121,6 +124,7 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
           Novo Infectado
         </Button>
 
+        {syncConfigured && hasAccount === false && <section className="card stack"><h2>Salve suas fichas em uma conta</h2><p className="muted">Você pode experimentar o criador sem login. Para sincronizar suas fichas entre PC e celular, entre na sua conta. É possível participar de mesas sem login.</p><button className="btn primary" onClick={() => go('/account')}>Criar conta ou entrar</button></section>}
         <TableCodeCard />
 
         {groups.length > 0 && (
