@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Header, Page } from '../components/ui';
-import { useNavigate } from 'react-router-dom';
+import { go } from '../lib/router';
 
 // Consulta rápida: resumos curtos em palavras próprias, com a página do livro para o texto oficial.
 const RULES: { title: string; page: string; body: string[] }[] = [
@@ -64,7 +64,6 @@ const RULES: { title: string; page: string; body: string[] }[] = [
 export function RulesPage() {
   const [q, setQ] = useState('');
   const [mode, setMode] = useState<'start' | 'lookup'>('start');
-  const go = useNavigate();
   const list = RULES.filter((r) => (r.title + r.body.join(' ')).toLowerCase().includes(q.toLowerCase()));
   return (
     <>
