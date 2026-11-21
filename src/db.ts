@@ -1,1 +1,0 @@
-import Dexie,{type Table} from 'dexie';import type {Character} from './rules';class LocalDB extends Dexie{characters!:Table<Character,string>;constructor(){super('assimilacao-local');this.version(1).stores({characters:'id,updatedAt'})}}export const db=new LocalDB();
