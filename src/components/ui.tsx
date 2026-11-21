@@ -1,11 +1,17 @@
 import { DiceSymbolArt } from './BrandAssets';
 import { useCallback, useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useOnline } from '../lib/hooks';
-import { back, go } from '../lib/router';
+import { back, go, usePath } from '../lib/router';
 import { Icon, Mark, type IconName } from './Icon';
 
 // ------------------------------------------------------------------ estrutura
 export function Header({ title, backTo, right }: { title?: string; backTo?: string; right?: ReactNode }) {
+  const path = usePath();
+  const isSheet = path.startsWith('/sheet/');
+  const openSheetSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el instanceof HTMLDetailsElement) { el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  };
   return (
     <header className="app-header">
       {backTo !== undefined ? (
@@ -25,6 +31,8 @@ export function Header({ title, backTo, right }: { title?: string; backTo?: stri
         <details className="header-more">
           <summary className="header-tool" aria-label="Mais opções" title="Mais opções"><Icon name="more" /><span>Mais</span></summary>
           <div className="header-menu">
+            {isSheet && <button type="button" onClick={() => openSheetSection('sheet-table')}><Icon name="users" /> Mesa e sincronização</button>}
+            {isSheet && <button type="button" onClick={() => openSheetSection('sheet-backup')}><Icon name="download" /> Backup desta ficha</button>}
             <button type="button" onClick={() => go('/backup')}><Icon name="download" /> Backup e importação</button>
             <button type="button" onClick={() => go('/')}><Icon name="home" /> Início</button>
           </div>
