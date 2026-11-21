@@ -103,7 +103,10 @@ function TableCodeCard() {
 
   return (
     <Card title="Minhas mesas" icon="users">
-      {tables.map((t) => <p key={t.tableId}><strong>{t.tableName}</strong> · Código {t.tableCode} · Participação vinculada à sua conta</p>)}
+      {tables.map((t) => <div key={t.tableId} className="stack">
+        <p><strong>{t.tableName}</strong> · Código {t.tableCode} · Participação vinculada à sua conta</p>
+        <button className="btn small" type="button" onClick={() => { setPendingTable(t.tableCode); setSuccess(`Sua próxima ficha concluída será vinculada à mesa ${t.tableName}.`); }}>Usar mesa na próxima ficha</button>
+      </div>)}
       {success && <Notice tone="ok">{success}</Notice>}
       <p className="muted">{account ? 'Entre com o código para vincular a mesa à sua conta, sem precisar criar uma ficha. Ela aparecerá nos seus outros dispositivos.' : 'Você pode informar o código sem cadastro. Para manter a participação na mesa entre dispositivos, entre na sua conta.'}</p>
       <Field label="Código da mesa">
