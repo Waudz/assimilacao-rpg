@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 import { Button, Card, EmptyState, Header, Notice, Page, SectionTitle, SymbolIcon, SymbolRow, SYMBOL_NAMES, SYMBOL_SHORT, type SymbolKind } from '../components/ui';
 import { DIE_TYPES, sumKept, translateFace, type DieType, type Roll } from '../lib/dice';
-import { randomId } from '../lib/rules';\nimport { toolReturnPath } from '../lib/router';
+import { randomId } from '../lib/rules';
+import { toolReturnPath } from '../lib/router';
 
 /** Total de um símbolo: o número "pulsa" sempre que muda, para o resultado ser percebido na hora. */
 function Total({ kind, value }: { kind: SymbolKind; value: number }) {
