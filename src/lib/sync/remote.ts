@@ -46,15 +46,26 @@ export const syncConfigured = Boolean(url && key);
 export const DB_SCHEMA = 'assimilacao';
 
 let client: Client | null = null;
+let ready: Promise<Client> | null = null;
 
 /** Para testes. */
 export function __setClientForTests(c: Client | null) {
   client = c;
+  ready = null;
 }
 
-async function getClient(): Promise<Client> {
-  if (!url || !key) throw new Error('not_configured');
-  client ??= createClient(url, key, { db: { schema: DB_SCHEMA }, auth: { persistSession: true, autoRefreshToken: true, storageKey: 'assimilacao-auth' } });
+/** Cria o cliente e garante UMA sessão anônima, mesmo com várias chamadas simultâneas (evita identidades duplicadas). */
+function getClient(): Promise<Client> {
+  if (!url || !key) return Promise.reject(new Error('not_configured'));
+  ready ??= connect().catch((e) => {
+    ready = null; // permite nova tentativa depois de falha (ex.: sem rede)
+    throw e;
+  });
+  return ready;
+}
+
+async function connect(): Promise<Client> {
+  client ??= createClient(url!, key!, { db: { schema: DB_SCHEMA }, auth: { persistSession: true, autoRefreshToken: true, storageKey: 'assimilacao-auth' } });
   const { data } = await client.auth.getSession();
   if (!data.session) {
     const { error } = await client.auth.signInAnonymously();

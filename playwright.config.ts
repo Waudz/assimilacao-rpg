@@ -6,7 +6,7 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   reporter: [['list']],
-  use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure' },
+  use: { baseURL: process.env.PW_BASE_URL ?? 'http://127.0.0.1:4173/', trace: 'retain-on-failure' },
   projects: [
     { name: 'iphone-se', use: { ...devices['iPhone SE'], browserName: 'chromium', channel: process.env.PW_CHANNEL } },
     { name: 'pixel', use: { ...devices['Pixel 7'], channel: process.env.PW_CHANNEL } },

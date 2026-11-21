@@ -75,7 +75,7 @@ A chave anon é pública por desenho; quem protege os dados são as políticas R
 
 ## Publicar (GitHub Pages)
 
-1. *Settings → Pages → Source: **GitHub Actions***.
+1. *Settings → Pages → Build and deployment → Source: **GitHub Actions*** (sem isso o job `deploy` falha com 404; exige admin do repositório).
 2. Faça merge na `main`: o workflow `.github/workflows/deploy.yml` roda tipos, testes, build, E2E e publica `dist/`.
 3. O app fica em `https://<usuário>.github.io/assimilacao-rpg/` (HTTPS, exigido para PWA).
 

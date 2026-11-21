@@ -19,7 +19,7 @@ test('Assimilador e Infectado em navegadores separados: mesa, código, sincroniz
   for (const { page } of [gm, pl]) page.on('pageerror', (e) => consoleErrors.push(e.message));
 
   // --- Assimilador cria a mesa (autenticação anônima real)
-  await gm.page.goto('/');
+  await gm.page.goto('./');
   await gm.page.getByRole('button', { name: /Assimilador/ }).click();
   await gm.page.getByLabel('Nome da mesa').fill(tableName);
   await gm.page.getByRole('button', { name: /Criar mesa/ }).click();
@@ -76,7 +76,7 @@ test('Assimilador e Infectado em navegadores separados: mesa, código, sincroniz
 
   // --- Segundo jogador (outro navegador) com o mesmo código não vê a ficha do primeiro
   const pl2 = await mk();
-  await pl2.page.goto('/');
+  await pl2.page.goto('./');
   await pl2.page.getByRole('button', { name: /Infectado/ }).click();
   await expect(pl2.page.getByText(/Joaquin/)).toHaveCount(0);
   await pl2.ctx.close();
@@ -85,7 +85,7 @@ test('Assimilador e Infectado em navegadores separados: mesa, código, sincroniz
   pl.page.once('dialog', (d) => void d.accept());
   await pl.page.getByRole('button', { name: 'Excluir ficha' }).click();
   await expect(pl.page.getByRole('button', { name: '+ Novo Infectado' })).toBeVisible({ timeout: 20000 });
-  await gm.page.goto('/#/');
+  await gm.page.goto('./#/');
   await gm.page.getByRole('button', { name: new RegExp(tableName) }).click();
   await gm.page.getByText('Recuperação e administração').click();
   gm.page.once('dialog', (d) => void d.accept());
