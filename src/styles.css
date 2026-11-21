@@ -1221,3 +1221,15 @@ Painel do Assimilador: visão rápida, somente leitura, sem ocupar espaço com a
 .total.pressure,.symchip.pressure { border-color:#298b94; color:#236f78; }
 .total.zero { opacity:.8; }
 .total.zero .n { opacity:.7; }
+
+/* Navegação global: a marca permanece fixa, e a seta é uma ação separada. */
+.brand-mark-button { display:flex; align-items:center; justify-content:center; flex:none; padding:0; border:0; background:transparent; cursor:pointer; color:inherit; }
+.brand-mark-button .mark { display:block; }
+.header-back { flex:none; }
+.header-actions { margin-left:auto; }
+.header-more { order:99; }
+@media(max-width:580px) { .app-header { gap:4px; } .header-back { width:30px; min-width:30px; padding:3px; } .brand { min-width:0; } .brand small { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; } }
+/* Gerenciamento só pelo menu contextual; exclusão visível na própria ficha. */
+.sheet-manage-backup { border-top:1px solid var(--color-line); padding-top:12px !important; }
+.sheet-delete-action { display:flex; justify-content:flex-end; padding:10px 0 20px; }
+.sheet-delete-action .btn { border-color:var(--color-bad); }
