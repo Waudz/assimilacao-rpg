@@ -190,13 +190,23 @@ function TableCodeCard() {
 }
 
 export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
-  const chars = useLive(listCharacters, [], []);
   const acct = useAccount();
   const metas = useLive(() => db.sync.toArray(), [], []);
+  const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    const reload = () => setRefresh((n) => n + 1);
+    const visible = () => { if (document.visibilityState === 'visible') reload(); };
+    window.addEventListener('pageshow', reload);
+    window.addEventListener('online', reload);
+    document.addEventListener('visibilitychange', visible);
+    return () => { window.removeEventListener('pageshow', reload); window.removeEventListener('online', reload); document.removeEventListener('visibilitychange', visible); };
+  }, []);
+  const chars = useLive(listCharacters, [refresh], undefined as Awaited<ReturnType<typeof listCharacters>> | undefined);
+  const characters = chars ?? [];
   const online = useOnline();
   const [selectedTable, setSelectedTable] = useState<string>('all');
-  const groups = Array.from(new Map(metas.filter((m) => m.tableId && chars.some((c) => c.id === m.id)).map((m) => [m.tableId!, { id: m.tableId!, name: m.tableName || 'Mesa' }])).values());
-  const visibleChars = selectedTable === 'all' ? chars : selectedTable === 'none' ? chars.filter((c) => !metas.some((m) => m.id === c.id && m.tableId)) : chars.filter((c) => metas.some((m) => m.id === c.id && m.tableId === selectedTable));
+  const groups = Array.from(new Map(metas.filter((m) => m.tableId && characters.some((c) => c.id === m.id)).map((m) => [m.tableId!, { id: m.tableId!, name: m.tableName || 'Mesa' }])).values());
+  const visibleChars = selectedTable === 'all' ? characters : selectedTable === 'none' ? characters.filter((c) => !metas.some((m) => m.id === c.id && m.tableId)) : characters.filter((c) => metas.some((m) => m.id === c.id && m.tableId === selectedTable));
 
   const create = async () => {
     const c = newCharacter();
@@ -227,7 +237,8 @@ export function HomePage({ onSwitchRole }: { onSwitchRole: () => void }) {
           </section>
         )}
         <SectionTitle icon="user">{selectedTable === 'all' ? 'Todos os Infectados' : selectedTable === 'none' ? 'Fichas sem mesa' : 'Fichas da mesa'}</SectionTitle>
-        {visibleChars.length === 0 && (
+        {chars === undefined && <Loading label="Carregando seus Infectados…" />}
+        {chars !== undefined && visibleChars.length === 0 && (
           <EmptyState icon="scroll" title={selectedTable === "all" ? "Nenhuma ficha encontrada" : selectedTable === "none" ? "Nenhuma ficha sem mesa" : "Nenhuma ficha nesta mesa"}>
             Crie seu primeiro Infectado ou importe um backup.
           </EmptyState>
